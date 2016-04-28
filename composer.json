@@ -1,0 +1,15 @@
+{
+    "name": "domraider/rxnet",
+    "description": "Rx connector for PHP",
+    "require": {
+        "php": "7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "etienneroudeix",
+            "email": "etienne.roudeix@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
