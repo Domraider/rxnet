@@ -244,11 +244,19 @@ class SocketWrapper extends Observable
      * Send back event with its labels (and id) but replace data
      * @param $originalEvent
      * @param $data
+     * @param null $slotId
      */
-    public function rep(Event $originalEvent, $data) {
-        $originalEvent->labels['rep'] = true;
-        $originalEvent->data = $data;
-        $this->send($originalEvent);
+    public function rep(Event $originalEvent, $data, $slotId = null) {
+        if ($data instanceof Event) {
+            $event = $data;
+            $event->labels['rep'] = true;
+            $event->labels['id'] = $originalEvent->labels['id'];
+        } else {
+            $event = clone $originalEvent;
+            $event->labels['rep'] = true;
+            $event->data = $data;
+        }
+        $this->send($event, $slotId);
     }
 
     /**
