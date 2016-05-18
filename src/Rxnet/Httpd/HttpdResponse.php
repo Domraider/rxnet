@@ -69,6 +69,22 @@ class HttpdResponse extends Observable
     }
 
     /**
+     * @param $text
+     * @param int $statusCode
+     * @param array $headers
+     * @return Observable
+     */
+    public function text($text, $statusCode = 200, $headers = [])
+    {
+        $headers['Content-Type'] = 'content/text';
+        $this->writeHead($statusCode, $headers);
+        $this->end($text);
+
+        return $this;
+
+    }
+
+    /**
      * @param int $status
      * @param array $headers
      */
