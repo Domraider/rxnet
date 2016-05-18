@@ -4,6 +4,7 @@ namespace Rxnet\Zmq;
 use React\EventLoop\LoopInterface;
 use Rxnet\Subject\EndlessSubject;
 use Rxnet\Zmq\Serializer\MsgPack;
+use Rxnet\Zmq\Serializer\Serialize;
 use Rxnet\Zmq\Serializer\Serializer;
 
 class RxZmq
@@ -30,7 +31,7 @@ class RxZmq
     {
         $this->loop = $loop;
         $this->context = $context ?: new \ZMQContext();
-        $this->serializer = $serializer ? : new MsgPack();
+        $this->serializer = $serializer ? : new Serialize();
     }
 
     /**
