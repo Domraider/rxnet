@@ -68,7 +68,7 @@ class Dealer
 
     public function onBarResponse(Event $event)
     {
-        printf("Received /bar response with id\n", $event->getData('id'));
+        printf("Received /bar response with id %s\n", $event->getData('id'));
     }
 
     public function askRouter()
