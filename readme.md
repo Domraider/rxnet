@@ -4,6 +4,8 @@ RXNet is a library used to communicate using Reactive X observer pattern.
 ## Installtion
 With composer : ```domraider/rxnet```
 
+Or just clone the lib, run ```composer install``` and try the examples scripts.
+
 ## Examples
 You can find examples files to run in the ```example``` folder.
 
