@@ -35,33 +35,51 @@ class Event implements EventInterface
      * @param $name
      * @return bool
      */
-    public function is($name) {
+    public function is($name)
+    {
         return $this->name === $name;
+    }
+
+    /**
+     * @param $prefix
+     * @return bool
+     */
+    public function hasPrefix($prefix)
+    {
+        $checkPrefix = substr($this->name, 0, strlen($prefix) + 1);
+        return $checkPrefix == sprintf("%s/", $prefix);
     }
 
     /**
      * @param string $name filter with * possible
      * @return bool
      */
-    public function contains($name) {
+    public function contains($name)
+    {
         return fnmatch($name, $this->name, FNM_CASEFOLD);
     }
-    public function getName() {
+
+    public function getName()
+    {
         return $this->name;
     }
-    public function getData($key = null) {
+
+    public function getData($key = null)
+    {
         if (null !== $key) {
             return isset($this->data[$key]) ? $this->data[$key] : null;
         }
 
         return $this->data;
     }
+
     /**
      * @param $key
      * @param $value
      * @return bool
      */
-    public function hasLabel($key, $value = null) {
+    public function hasLabel($key, $value = null)
+    {
         if(!$value) {
             return (bool) isset($this->labels[$key]);
         }
@@ -72,7 +90,8 @@ class Event implements EventInterface
      * @param $key
      * @return mixed
      */
-    public function getLabel($key) {
+    public function getLabel($key)
+    {
         return isset($this->labels[$key]) ? $this->labels[$key] : null;
     }
 
