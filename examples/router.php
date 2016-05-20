@@ -19,7 +19,7 @@ $loop->run();
 class Router
 {
     protected $ip = "tcp://0.0.0.0:23001";
-    
+
     /** @var SocketWrapper  */
     protected $router;
     /** @var EventLoopScheduler  */
@@ -46,21 +46,23 @@ class Router
             })
             ->subscribeCallback([$this, 'handleBar']);
     }
-    
+
     public function handleFoo(Event $event)
     {
-        printf("Received /foo with id %s, send response in 3 seconds\n", $event->getData('id'));
+        printf("[%s]Received /foo with id %s, send response in 3 seconds\n", date('H:i:s'), $event->getData('id'));
         $slotId = $event->getLabel('address');
         $this->scheduler->schedule(function() use ($slotId, $event) {
+            printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getData('id'));
             $this->router->send(new Event('/response/foo', ['id' => $event->getData('id')]), $slotId);
         }, 3000);
     }
-    
+
     public function handleBar(Event $event)
     {
-        printf("Received /bar with id %s, send response in 7 seconds\n", $event->getData('id'));
+        printf("[%s]Received /bar with id %s, send response in 7 seconds\n", date('H:i:s'), $event->getData('id'));
         $slotId = $event->getLabel('address');
         $this->scheduler->schedule(function() use ($slotId, $event) {
+            printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getData('id'));
             $this->router->send(new Event('/response/bar', ['id' => $event->getData('id')]), $slotId);
         }, 7000);
     }
