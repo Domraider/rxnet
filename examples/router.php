@@ -39,31 +39,36 @@ class Router
             ->filter(function(Event $event) {
                 return $event->is("/request/foo");
             })
+            ->map(function(Event $event) {
+                printf("[%s]Received /foo with id %s, send response in 3 seconds\n", date('H:i:s'), $event->getData('id'));
+                return $event;
+            })
+            ->delay(3000, $this->scheduler)
             ->subscribeCallback([$this, 'handleFoo']);
         $this->router
             ->filter(function(Event $event) {
                 return $event->is("/request/bar");
             })
+            ->map(function(Event $event) {
+                printf("[%s]Received /bar with id %s, send response in 7 seconds\n", date('H:i:s'), $event->getData('id'));
+                return $event;
+            })
+            ->delay(7000, $this->scheduler)
             ->subscribeCallback([$this, 'handleBar']);
     }
 
     public function handleFoo(Event $event)
     {
-        printf("[%s]Received /foo with id %s, send response in 3 seconds\n", date('H:i:s'), $event->getData('id'));
         $slotId = $event->getLabel('address');
-        $this->scheduler->schedule(function() use ($slotId, $event) {
-            printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getData('id'));
-            $this->router->send(new Event('/response/foo', ['id' => $event->getData('id')]), $slotId);
-        }, 3000);
+        printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getData('id'));
+        $this->router->send(new Event('/response/foo', ['id' => $event->getData('id')]), $slotId);
     }
 
     public function handleBar(Event $event)
     {
-        printf("[%s]Received /bar with id %s, send response in 7 seconds\n", date('H:i:s'), $event->getData('id'));
         $slotId = $event->getLabel('address');
-        $this->scheduler->schedule(function() use ($slotId, $event) {
-            printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getData('id'));
-            $this->router->send(new Event('/response/bar', ['id' => $event->getData('id')]), $slotId);
-        }, 7000);
+        printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getData('id'));
+        $this->router->send(new Event('/response/bar', ['id' => $event->getData('id')]), $slotId);
+
     }
 }

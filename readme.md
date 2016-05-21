@@ -46,18 +46,3 @@ php dealer.php 1
 ```
 php dealer.php 2
 ```
-
-and more ...
-
-### Req / Rep
-Requester will wail for a response before doing anything.
-Responder will not pull any further request until it responded the previous one.
-
-Run :
-```
-php responder.php
-```
-
-```
-php requester.php
-```

@@ -39,6 +39,11 @@ class Responder
             ->filter(function(Event $event) {
                 return $event->is("/request/timeout");
             })
+            ->map(function(Event $event) {
+                printf("[%s]Received /request/timeout with id %s, send response in 4 seconds\n", date('H:i:s'), $event->getLabel('id'));
+                return $event;
+            })
+            ->delay(4000, $this->scheduler)
             ->subscribeCallback([$this, 'slowResponse']);
         $this->responder
             ->filter(function(Event $event) {
@@ -49,11 +54,8 @@ class Responder
     
     public function slowResponse(Event $event)
     {
-        printf("[%s]Received /request/timeout with id %s, send response in 4 seconds\n", date('H:i:s'), $event->getLabel('id'));
-        $this->scheduler->schedule(function() use ($event) {
-            printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getLabel('id'));
-            $this->responder->rep($event, ["hello" => "world"]);
-        }, 4000);
+        printf("[%s]id %s, response sent\n", date('H:i:s'), $event->getLabel('id'));
+        $this->responder->rep($event, ["hello" => "world"]);
     }
     
     public function fastResponse(Event $event)

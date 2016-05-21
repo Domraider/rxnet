@@ -40,18 +40,19 @@ class Requester
         printf("Will connect on %s\n", $this->ip);
         $this->requester->connect($this->ip, 'requester');
 
+
         echo("Will ask responder every 5 seconds\n");
         $this->loop->addPeriodicTimer(5, [$this, 'askResponder']);
     }
 
     public function askResponder()
     {
-        $what = (mt_rand(0,100) % 2) == 0 ? "timeout" : "success";
+        $what = (mt_rand(0,100) % 2) === 0 ? "timeout" : "success";
         $id = time();
         printf("[%s]Send /request/%s with id %s\n", date('H:i:s'), $what, $id);
 
         $this->requester->req(new Event(sprintf("/request/%s", $what), null, ['id' => $id]))
-            ->timeout(3000, null, $this->scheduler)
+            ->timeout(3500, null, $this->scheduler)
             ->subscribeCallback(
                 function (Event $e) {
                     printf("[%s]Got response for %s\n", date('H:i:s'), $e->getLabel('id'));
