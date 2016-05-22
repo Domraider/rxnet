@@ -1,0 +1,787 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Microservices beyond the trench</title>
+
+		<link rel="stylesheet" href="css/reveal.css">
+		<link rel="stylesheet" href="css/theme/simple.css">
+
+		<!-- Theme used for syntax highlighting of code -->
+		<link rel="stylesheet" href="lib/css/darkula.css">
+		<link href='https://fonts.googleapis.com/css?family=Raleway:400,300,600,500,700,800,200,100' rel='stylesheet' type='text/css'>
+
+		<style>
+			img {
+				border:0px !important;
+				box-shadow: none !important;
+			}
+			pre {
+				background: #2b2b2b;
+			}
+			.reveal pre code {
+				max-height: none;
+				overflow: hidden;
+			}
+			.intro {
+				color:white;
+
+			}
+			.intro h1 {
+				font-weight: 100;
+				color:white;
+				margin-bottom: 50px;
+			}
+			.intro h1 strong {
+				font-weight: 400;
+			}
+			.intro img {
+				background: transparent !important;
+			}
+			.intro button {
+				border-bottom-color: white !important;
+			}
+			.intro a {
+				color:lightblue !important;
+				text-decoration: underline;
+			}
+			.intro ul {
+				margin:0px !important;
+			}
+			.intro li {
+				font-weight: 100 !important;
+			}
+			.intro li small {
+				font-weight:500;
+			}
+			.intro p{
+				font-size: 0.6em;
+				text-align: right;
+			}
+			blockquote.quote {
+				text-align: left;
+				box-shadow: none;
+				font-size: 1em;
+				font-style: normal;
+			  quotes: "\201C""\201D""\2018""\2019";
+			}
+			h4 {
+				font-weight: 600;
+			}
+			blockquote.quote:before {
+			  color: #ccc;
+			  content: open-quote;
+			  font-size: 3em;
+			  line-height: 0.1em;
+			  margin-right: 0.25em;
+			  vertical-align: -0.4em;
+			}
+			blockquote.quote p {
+			  display: inline;
+			}
+		</style>
+
+		<!-- Printing and PDF exports -->
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section>
+					<section>
+						<h1>
+							<strong>Microservices</strong> <br>
+							<small style="font-size:0.8em">beyond the trench</small></h1>
+						<p>
+							Feedback from 1 year of life<br>
+							with 400 microservices<br>
+							 and growing...
+						</p>
+						<aside class="notes">
+							Fond d'écran attente
+						</aside>
+					</section>
+
+					<section class="intro" data-background-image="img/bg-seo.jpg">
+						<h1><strong>Hello</strong> PHP tour</h1>
+						<img src="img/logo.png" align="left" alt="" /><br>
+						<ul style="list-style:none;">
+							<li>
+								Etienne Roudeix <br>
+								<small>Lead developper</small>
+							</li>
+							<li>
+								Vincent Vermersch<br>
+								<small>CTO</small>
+							</li>
+						</ul>
+						<br><br><br>
+						<p>
+							Get the <a href="http://domraider.github.io/rxnet/#/">slides</a> and working
+								<a href="https://github.com/Domraider/rxnet">examples</a>
+						</p>
+
+						<aside class="notes">
+							Bonjour à tous, <br>
+							Nous sommes Etienne et Vincent, Lead dev et CTO à Domraider.<br>
+							Spécialiste français du nom de domaine expiré <br>
+							On vous fait un retour de notre expérience du passage de monolith au microservice
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>
+							<strong>Monolith</strong> <br>
+							<small>Where we come from</small>
+						</h2>
+						<img src="img/monolith.png" alt="D'ou nous partons" />
+						<aside class="notes">
+							Voilà où on en était il y à un an <br>
+							VV : Un gros serveur HTTP qui gère tout les services <br>
+							<br>
+
+							Complexe à scaler : sessions, synchro data, un point tombe tout tombe<br>
+							Quelques worker basés sur un redis central, mais même problème du point central<br>
+							Notre CEO est venu nous dire que l'on allait être spécialiste européen du ndd expiré. <br>
+							Donc il nous fallait pouvoir gérer la montée en charge <br>
+
+							ER : Exemple des enchéres : à heure précise jusqu'à 400 personnes qui rechargent toutes les secondes, pas de cache car les données doivent être à jour en live
+<br>
+							Grossir à 1000 ou 2000 avec un monolith est compliqué, il nous fallait pouvoir sortir ça
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Microservices</strong> <br>
+							<small>The goal</small>
+						</h2>
+						<img src="img/Microservice.png" alt="Microservices" />
+						<aside class="notes">
+							ER : choix qui nous a le plus plu :  microservice<br>
+							objectif : 1 service = 1 process<br>
+							tous indépandants les un des autres (crash)<br>
+							scalable
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Microservices</strong> <br>
+							<small>The real life</small>
+						</h2>
+						<img src="img/Microservices-real.png" alt="Microservices in real life" />
+						<aside class="notes">
+							VV : En vrai on a du y aller progressivement<br>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Goals</strong> <br>
+							<small>Defined 1 year ago</small>
+						</h2>
+						<br>
+						<ol>
+							<li>Scalable</li>
+							<li>Resilient</li>
+							<li>Agile</li>
+							<li>Smooth transition</li>
+						</ol>
+						<aside class="notes">
+							VV : Les objectifs que l'on c'était mis l'année dernière étaient clair<br>
+<br>
+							On ajoute autant de serveurs que l'on a besoin
+<br>
+							survis quoi qu'il arrive, pas d'astreintes
+<br>
+							simple à déployer, mettre à jour et utiliser, minimaliste donc simple à tester et à documenter
+<br>
+							Et bien sur : transition simple avec l'existant et pouvoir garder des choses sur le monolith
+						</aside>
+					</section>
+
+					<section>
+						<img src="img/dear-santa.jpg" alt="Microservices in real life" />
+						<aside class="notes">
+							ER : Côté PHP nous avons suivi le design pattern du
+						</aside>
+					</section>
+				</section>
+
+
+				<section>
+					<section>
+						<h2>
+							<strong>CommandBus</strong><br>
+							<small>Normalise execution everywhere</small>
+						</h2>
+						<ul>
+							<li>Separation of concerns</li>
+							<li>Abstracted runtime env</li>
+							<li>Domain oriented</li>
+						</ul>
+						<aside class="notes">
+							ER :
+							peu de de dépendances, executable dans n'import quel contexte (monolith, microservice ...)
+<br>
+							1. Simple à tester, réduit les cas de problèmes<br>
+							2. Quel que soit où l'on soit on peut passer par là pour éxecuter : HTTP, Console, AMQP, ZMQ ..<br>
+							3. On gagne une cohérence avec le business<br>
+
+							=> à quoi ça ressemble, pour une participation à une enchère<br>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Command</strong><br>
+							<small>Validate and transport</small>
+						</h2>
+						<pre style="background-color: white; margin: -29px 48px; box-shadow: none">
+							<code class="php">
+/**
+ * @param float $amount
+ * @param string $user_id
+ * @param string $auction_id
+ */
+class AuctionRaiseCommand extends Command
+{
+	public static $handlers = [
+  		AddUserToAuction::class,
+  		CheckBidAmount::class,
+  		NotifyParticipants::class
+	];
+	public function __construct(array $attributes = [])
+	{
+		// Validate given data
+		parent::__construct($attributes);
+	}
+}
+							</code>
+						</pre>
+						<aside class="notes">
+							ER :
+							1 command = plusieurs handlers<br>
+							1 handler executé ne le sera plus à nouveau<br>
+							validation à la construction : pret à tourner<br>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Handler</strong><br>
+							<small>Execute and modify</small>
+						</h2>
+						<pre>
+							<code class="php">
+class AddUserToAuction {
+    protected $auction;
+    public function __construct(AuctionRepository $auction)
+    {
+        $this->auction = $auction;
+    }
+    public function handle(AuctionRaiseCommand $command)
+    {
+
+    }
+}
+							</code>
+						</pre>
+						<aside class="notes">
+							ER :<br>
+							injection dependence<br>
+							handle => logique<br>
+							si le handler s'execute sans Exception => succès<br>
+							J'ai ma commande & ses handlers<br><br>
+							=> comment l'exetuter<br>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Bus</strong><br>
+							<small>How to use it</small>
+						</h2>
+						<pre>
+							<code class="php">
+$bus = new SimpleBus();
+$bus->handle(new AuctionRaiseCommand([
+  'user_id'=> '',
+  'auction_id'=>'',
+  'amount' => ''
+]));
+							</code>
+						</pre>
+						<aside class="notes">
+							ER :
+							Avec un bus (ici SimpleBus)
+							et c'est parti !!!!!!!
+						</aside>
+					</section>
+
+					<section>
+						<img src="img/magic-bus.jpg" alt="" />
+						<aside class="notes">
+							VV : L'éxecution est souple et simple<br>
+							La magie est aussi que l'on peut définir les règles d'éxécutions grace aux middleware
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Capacities</strong><br>
+							<small>Command set the rules</small>
+						</h2>
+						<pre>
+							<code class="php">
+class AuctionCommand implements RetryOnFail, IsHandledAsynchronously
+{
+    public function getMaxRetry();
+    public function getWorker();
+    public function getRetryDelay($tried);
+}
+							</code>
+						</pre>
+						<aside class="notes">
+							VV : Ici je dis que ma commande va être déléguée que si elle crash elle pourra être retryer plus t
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Middleware</strong><br>
+							<small>React to the rules</small>
+						</h2>
+						<pre>
+							<code class="php">
+$bus = new SimpleBus();
+$bus->appendMiddleware(new AsynchronousMiddleware());
+$bus->appendMiddleware(new RetryOnFailMiddleware());
+							</code>
+						</pre>
+						<aside class="notes">
+							VV : Après selon vos besoin et votre envie de respecter les capacities vous ajoutez ou pas les middlewares<br>
+							Par exemple dans notre process d'auctions
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<h2>
+							<strong>Auction process</strong><br>
+							<small>Different pods are involved</small>
+						</h2>
+						<img src="img/Auctions.png" alt="Microservices in real life" />
+						<aside class="notes">
+							VV : API va déléguer le travail et respecter le AsynchronousMiddleware<br>
+							Alors que le worker va lui ignorer le asynchronous mais ré-essayer si la command throw<br>
+							Le worker va envoyer une commande au pusher qui va relayer aux clients<br>
+<br>
+							Plusieurs librairies dispo des plus simples : tactician et simplebus aux plus complexes : broadway et prooph<br>
+<br>
+							Conférence sur le sujet organisé par LavaJug mercredi soir à Clermont Ferrand : CQRS par Matthieu Moquet
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Communications</strong><br>
+							<small>Each case needs its protocol</small>
+						</h2>
+						<img src="img/Auctions-protocol.png" alt="Microservices in real life" />
+						<aside class="notes">
+<br>
+							ER : les fléches c'est bien beau mais ça a jamais envoyé de paquet<br>
+<br>
+							API<->worker : php-fpm donc pas de connection persistente, délégue au worker qui lui dit OK quand il l'a reçu et peut le traiter<br>
+							=> on utilise http pour la fiabilité du message
+							worker<->pusher : envoi aux pusher websocket sans s'occuper de la réception<br>
+							=> ZMQ pushs
+							Pusher : envois a tous les navigateurs connectés<br>
+							=> pub/sub
+<br>
+							Les workers sont 100% PHP vous pouvez retrouver le code que l'on utilise pour la communication
+												</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Delegate</strong><br>
+							<small>HTTP PUT with acknowledgement</small>
+						</h2>
+						<pre>
+							<code class="php">
+class Worker extends Console
+{
+    protected $signature = 'worker {--bind=tcp://0.0.0.0:25001}';
+    public function handle(Httpd $httpd)
+    {
+        $httpd->route('PUT', '/', function($request, $response) {
+            $response->send("OK")
+                ->subscribeCallback(null, null, function() use($request) {
+                    SyncBus::handle($request->getCommand());
+                });
+        });
+        $httpd->listen($this->option('bind'));
+  }
+}
+							</code>
+						</pre>
+						<aside class="notes">
+							ER : api<->worker Le worker<br>
+							<ul>
+							<li>Console</li>
+							<li>lancer serveur http qui va ecouter un port donné</li>
+							<li>en cas de requete, repond qu'il a bien recu PUIS traite la donnée</li>
+						</ul>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Push</strong><br>
+							<small>on worker</small>
+						</h2>
+						<pre>
+							<code class="php">
+$push = $zmq->push("tcp://pusher.svc.domraider.com:23499");
+$push->send(new AuctionRaisedEvent());
+							</code>
+						</pre>
+						<aside>
+							worker<->pusher<br>
+							une fois l'envoi fait on se préocupe plus<br>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Pull</strong> <br>
+							<small>on pusher</small>
+						</h2>
+						<pre>
+							<code class="php">
+$pull = $zmq->pull("tcp://0.0.0.0:23499");
+$pull->subscribeCallback(function(AuctionRaisedEvent $event) {
+	foreach($this->webSocket->sessions as $session) {
+  		$session->send($event);
+	}
+});
+							</code>
+						</pre>
+						<aside class="notes">
+							en face on pull et pour chaque websocket que l'on a on transmet l'event<br>
+							et pour la websocket allez voir la lib Thruway<br>
+						</aside>
+					</section>
+
+					<section>
+						<img src="img/Auctions-real.png" alt="Microservices in real life" />
+						<aside class="notes">
+							ER :
+							<ul>
+							<li>Tout est facile à redonder, résilience assurée</li>
+							<li>Sur plusieurs serveurs physiques</li>
+							<li>La charge s'allége grace aux websocket</li>
+							<li>La mise à jour est plus rapide</li>
+							</ul>
+<br>
+							VV : Là on a un processus métier qui représente 4 services, chacun redondé au moins une fois<br>
+							Actuelement nous en avons 73 qui tournent en production,<br>
+							ce qui représente presque 400 pods,<br>
+							les workers gèrent en moyenne 4k commandes par minute<br>
+						</aside>
+					</section>
+
+					<section>
+						<img src="img/surprise.gif" alt="Microservices in real life" />
+						<aside class="notes">
+							VV : Il nous fallait un sérieux coup de main pour dompter tout ça :)
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<img src="img/Kubernetes.jpg" alt="Microservices in real life" />
+						<a href="https://www.youtube.com/watch?v=9C6YeyyUUmI">https://www.youtube.com/watch?v=9C6YeyyUUmI</a>
+						<aside class="notes">
+							VV : et on c'est fait aider par Google et son Kubernetes<br>
+							Ils ont gentiment décidés de mettre open source les idées et architectures qu'ils utilisent en interne<br>
+							pour gérer leur quelques milliards de containers.<br>
+							Je vous met une vidéo vers une démonstration parlante : un gars qui fait une mise à jour en faisant un stress test à 10M de req par seconde<br>
+<br>
+							1.3 presque sortie, projet de 2 ans, suivi par redhat et openshift, mesos, coreos
+							Du gros
+							On en est pas encore là mais ça nous a servi à plusieurs choses
+
+							Déjà
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Orchestration</strong><br>
+							<small>Cross-node supervision and scheduling</small>
+						</h2>
+						<img src="img/orchestrator.jpg" alt="Microservices in real life" />
+						<aside class="notes">
+							VV :
+							Gère la distribution des services et de leur réplicas sur le cluster<br>
+							En pratique : tout passe par lui, on a 15 machines physiques actuellement, lui nous gére tout<br>
+							limite officielle de 1000 nodes<br>
+<br>
+							si un service tombe le redémarre, si une machine tombe cherche une autre machine qui correspond<br>
+							lifeprobe pour vérifier que le pod tourne bien
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Routing</strong><br>
+							<small>Plug & play cluster communication</small>
+						</h2>
+						<ul>
+							<li>1 pod = 1 IP address</li>
+							<li>1 service load balance X pods</li>
+							<li>1 service = 1 dns entry (ttl <1s)</li>
+						</ul>
+						<aside class="notes">
+							ER :
+							1 IP par pod (pod = worker, pusher, ect.)<br>
+							1 service pour le load balancing entre pods identiques<br>
+							via une entrée dns<br>
+							1 route par host, pas de problème de port, on peut peut avoir plusieurs ports 80 par ex<br>
+							facile d'adresser un message à un worker<br>
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Scale</strong><br>
+							<small>Enlarge your service in 1 click</small>
+						</h2>
+						<pre>
+							<code class="bash">
+kubectl scale --replicas=5 rc AuctionWorker
+							</code>
+						</pre>
+						<aside class="notes">
+							ER : combien de pod identiques (ie Auction worker)
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Deploy</strong><br>
+							<small>and rollback if you need</small>
+						</h2>
+						<pre>
+							<code class="bash">
+kubectl rolling-update --image=domraider/worker:1.3.7 AuctionWorker
+							</code>
+						</pre>
+						<aside class="notes">
+							Logique identique au scale
+							<ul>
+								<li>Start a new pod with the new version</li>
+								<li>Wait for start to complete</li>
+								<li>Stop one pod from previous version </li>
+								<li>Continue until new version for all pods</li>
+							</ul>
+							Pareil pour revenir en arrière.<br>
+							Pendant un court instant les deux versions peuvent fonctionner ensemble<br>
+<br>
+							VV : Synthèse : on a testé d'autre solutions, on préfère k8s qui est incassable depuis 1 an<br>
+							15 noeuds, 200 RC, 367 pods, 73 services<br>
+
+							Conf mardi sur Kubernetes à 11H par Samuel Roze<br>
+
+						</aside>
+					</section>
+
+
+				</section>
+
+				<section>
+					<section>
+						<blockquote class="quote">
+							Le mariage sert à régler à deux <br>
+							des problèmes que l'on aurait jamais eu<br>
+						   si on était resté tout seul.<br>
+						</blockquote>
+						<h4>
+							Sacha Guitry
+						</h4>
+
+						<aside class="notes">
+							VV : De nouveaux soucis propres aux µservices <br>
+							pas que k8s
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Centralise</strong><br>
+							<small>Logs and bugs</small>
+						</h2>
+						<img src="img/charlie.jpg" alt="Microservices in real life" />
+						<aside class="notes">
+							VV : L'enchère que l'on a vu tout à l'heure aura pu s'executer sur 3 machines, si je doit suivre sa trace en explorant les machines ça peut être long<br>
+							graylog, ou plein de services payants<br>
+							Sentry
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>One code base</strong><br>
+							<small>5 images with their own versioning</small>
+						</h2>
+						<pre>
+							<code class="bash">
+composer install
+cp docker/worker/Dockerfile .
+cp docker/worker/.dockerignore .
+docker build -t worker:$version .
+docker tag latest worker:$version
+docker push worker:$version
+docker push worker:latest
+							</code>
+						</pre>
+						<aside class="notes">
+							ER : Un codebase donne x builds dockers qui vont donner eux mêmes y replication controller dans kubernetes<br>
+<br>
+Besoin d'un build automatisé avec versionning (jenkins)<br>
+<br>
+	une image docker par version, le build ne donne pas forcément lieu à un déploiement<br>
+
+							<ul>
+								<li>2 front : js only</li>
+								<li>api : php-fpm</li>
+								<li>wordpress : lemp</li>
+								<li>worker : php only</li>
+							</ul>
+
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>Monitor</strong><br>
+							<small>Collect metrics and send alerts</small>
+						</h2>
+						<img src="img/lifeguard.png" alt="Monitor" style="width: 80%!important" />
+						<aside class="notes">
+							VV : Besoin de comprendre ce qui se passe sur un service comme sur une machine, et d'être alerté quand quelque chose se passe mal<br>
+<br>
+							Alertes métiers comme techniques<br>
+<br>
+							InfluxDB et grafana, Tick, Prometheus : ou datadog
+
+						</aside>
+					</section>
+				</section>
+
+				<section>
+					<section>
+						<img src="img/one-year.jpg" alt="Microservices in real life" />
+
+						<aside class="notes">
+							VV : l'architecture ne résoud pas tous les problèmes, besoin d'avoir la compréhension complète du service et de ses problèmes avant de passer au microservice.<br>
+<br>
+							Les merdes sont plus simples à gérés (plus isolées)<br>
+<br>
+							ER : inconvenient : Coût pour rentrer dedans : docker, kubernetes, le pattern du command bus, des librairies matures de communication en PHP (ZMQ top, mais pas top en serveur HTTP), le travail en event (React, EV)<br>
+<br>
+							Bonne Scalabilité, agilité (4 release/jour), pas besoin de sysadmin pour 1 nouveau service<br>
+							résilience on a encore des downtimes  (même si résolu automatiquement)<br>
+							encore du monolith : encore du boulot, mais compatibilité<br>
+<br>
+							VV : temps d'intégration d'un nouveau dev simplifié<br>
+<br>
+							Evolution très rapide des solutions sur lesquelles on travaille<br>
+<br>
+
+						</aside>
+					</section>
+
+					<section>
+						<h1>RxNet</h1>
+						<p>
+							<a href="https://github.com/Domraider/rxnet">Examples and project can be found here</a></li>
+						</p>
+						<aside class="notes">
+							VV : on a du développer une librairie pour gérer toutes les communications <br>
+							on a choisi de l'open sourcé pour le PHP tour
+						</aside>
+					</section>
+
+					<section>
+						<h1>RTFM</h1>
+						<ul>
+							<li><a href="http://blog.eleven-labs.com/cqrs-pattern/">CQRS</a></li>
+							<li><a href="http://php-and-symfony.matthiasnoback.nl/2015/01/responsibilities-of-the-command-bus/">SimpleBus</a></li>
+							<li><a href="http://zguide.zeromq.org/page:all">ØMQ - The Guide</a></li>
+							<li><a href="https://github.com/voryx/Thruway">Thruway</a></li>
+							<li><a href="https://gist.github.com/staltz/868e7e9bc2a7b8c1f754">Reactive programming</a></li>
+							<li><a href="https://github.com/Domraider/rxnet">RXNet</a></li>
+							<li><a href="http://kubernetes.io/docs/">Kubernetes</a></li>
+						</ul>
+						<aside class="notes">
+							VV :
+						</aside>
+					</section>
+
+					<section>
+						<h2>
+							<strong>We hire</strong><br>
+							<small>
+								in Clermont Ferrand<br>
+								<small>
+									<a href="mailto:joinus@domraider.com">joinus@domraider.com</a>
+								</small>
+							</small>
+						</h2>
+
+						<img src="img/chateau.png" alt="Microservices in real life" />
+						<aside class="notes">
+							VV : Remerciement (pas trop mal au crane ?)<br>
+							Questions ?
+						</aside>
+					</section>
+				</section>
+			</div>
+		</div>
+
+		<script src="lib/js/head.min.js"></script>
+		<script src="js/reveal.js"></script>
+
+		<script>
+			// More info https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+				history: true,
+
+				// More info https://github.com/hakimel/reveal.js#dependencies
+				dependencies: [
+					{ src: 'plugin/markdown/marked.js' },
+					{ src: 'plugin/markdown/markdown.js' },
+					{ src: 'plugin/notes/notes.js', async: true },
+					{ src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } }
+				]
+			});
+		</script>
+	</body>
+</html>
