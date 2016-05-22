@@ -133,7 +133,9 @@
 							Bonjour à tous, <br>
 							Nous sommes Etienne et Vincent, Lead dev et CTO à Domraider.<br>
 							Spécialiste français du nom de domaine expiré <br>
-							On vous fait un retour de notre expérience du passage de monolith au microservice
+							<br>
+							Après un an de travail en production avec des microservices et des container docker <br>
+							on est venu vous présenter où on en est
 						</aside>
 					</section>
 				</section>
@@ -171,7 +173,8 @@
 							ER : choix qui nous a le plus plu :  microservice<br>
 							objectif : 1 service = 1 process<br>
 							tous indépandants les un des autres (crash)<br>
-							scalable
+							scalable <br> <br>
+							next VV
 						</aside>
 					</section>
 
@@ -208,6 +211,8 @@
 							simple à déployer, mettre à jour et utiliser, minimaliste donc simple à tester et à documenter
 <br>
 							Et bien sur : transition simple avec l'existant et pouvoir garder des choses sur le monolith
+							<br>
+							next ER
 						</aside>
 					</section>
 
@@ -326,7 +331,9 @@ $bus->handle(new AuctionRaiseCommand([
 						<aside class="notes">
 							ER :
 							Avec un bus (ici SimpleBus)
-							et c'est parti !!!!!!!
+							et c'est parti !!!!!!! <br>
+							<br>
+							next VV
 						</aside>
 					</section>
 
@@ -387,11 +394,14 @@ $bus->appendMiddleware(new RetryOnFailMiddleware());
 						<aside class="notes">
 							VV : API va déléguer le travail et respecter le AsynchronousMiddleware<br>
 							Alors que le worker va lui ignorer le asynchronous mais ré-essayer si la command throw<br>
-							Le worker va envoyer une commande au pusher qui va relayer aux clients<br>
+							Le worker va envoyer une commande au publisher qui va relayer aux clients<br>
 <br>
 							Plusieurs librairies dispo des plus simples : tactician et simplebus aux plus complexes : broadway et prooph<br>
 <br>
 							Conférence sur le sujet organisé par LavaJug mercredi soir à Clermont Ferrand : CQRS par Matthieu Moquet
+							<br>
+							<br>
+							next ER
 						</aside>
 					</section>
 
@@ -407,9 +417,9 @@ $bus->appendMiddleware(new RetryOnFailMiddleware());
 <br>
 							API<->worker : php-fpm donc pas de connection persistente, délégue au worker qui lui dit OK quand il l'a reçu et peut le traiter<br>
 							=> on utilise http pour la fiabilité du message
-							worker<->pusher : envoi aux pusher websocket sans s'occuper de la réception<br>
+							worker<->publisher : envoi aux publisher websocket sans s'occuper de la réception<br>
 							=> ZMQ pushs
-							Pusher : envois a tous les navigateurs connectés<br>
+							publisher : envois a tous les navigateurs connectés<br>
 							=> pub/sub
 <br>
 							Les workers sont 100% PHP vous pouvez retrouver le code que l'on utilise pour la communication
@@ -456,12 +466,12 @@ class Worker extends Console
 						</h2>
 						<pre>
 							<code class="php">
-$push = $zmq->push("tcp://pusher.svc.domraider.com:23499");
+$push = $zmq->push("tcp://publisher.svc.domraider.com:23499");
 $push->send(new AuctionRaisedEvent());
 							</code>
 						</pre>
-						<aside>
-							worker<->pusher<br>
+						<aside class="notes">
+							worker<->publisher<br>
 							une fois l'envoi fait on se préocupe plus<br>
 						</aside>
 					</section>
@@ -469,7 +479,7 @@ $push->send(new AuctionRaisedEvent());
 					<section>
 						<h2>
 							<strong>Pull</strong> <br>
-							<small>on pusher</small>
+							<small>on publisher</small>
 						</h2>
 						<pre>
 							<code class="php">
@@ -484,6 +494,7 @@ $pull->subscribeCallback(function(AuctionRaisedEvent $event) {
 						<aside class="notes">
 							en face on pull et pour chaque websocket que l'on a on transmet l'event<br>
 							et pour la websocket allez voir la lib Thruway<br>
+							next VV
 						</aside>
 					</section>
 
@@ -500,7 +511,7 @@ $pull->subscribeCallback(function(AuctionRaisedEvent $event) {
 <br>
 							VV : Là on a un processus métier qui représente 4 services, chacun redondé au moins une fois<br>
 							Actuelement nous en avons 73 qui tournent en production,<br>
-							ce qui représente presque 400 pods,<br>
+							ce qui représente presque 400 containers,<br>
 							les workers gèrent en moyenne 4k commandes par minute<br>
 						</aside>
 					</section>
@@ -518,16 +529,13 @@ $pull->subscribeCallback(function(AuctionRaisedEvent $event) {
 						<img src="img/Kubernetes.jpg" alt="Microservices in real life" />
 						<a href="https://www.youtube.com/watch?v=9C6YeyyUUmI">https://www.youtube.com/watch?v=9C6YeyyUUmI</a>
 						<aside class="notes">
-							VV : et on c'est fait aider par Google et son Kubernetes<br>
-							Ils ont gentiment décidés de mettre open source les idées et architectures qu'ils utilisent en interne<br>
-							pour gérer leur quelques milliards de containers.<br>
-							Je vous met une vidéo vers une démonstration parlante : un gars qui fait une mise à jour en faisant un stress test à 10M de req par seconde<br>
+							Orchestrateur de container docker. <br>
+							Fournis par Google et basé sur leurs architectures où ils gérent quelques milliards de containers <br>
 <br>
-							1.3 presque sortie, projet de 2 ans, suivi par redhat et openshift, mesos, coreos
-							Du gros
-							On en est pas encore là mais ça nous a servi à plusieurs choses
-
-							Déjà
+							1.3 presque sortie, projet de 2 ans, suivi par redhat et openshift, mesos, coreos <br>
+							Je vous met une vidéo vers une démonstration parlante : un gars qui fait une mise à jour en faisant un stress test à 10M de req par seconde<br>
+							<br>
+							on en est pas encore là mais il nous a déjà servi
 						</aside>
 					</section>
 
@@ -544,7 +552,8 @@ $pull->subscribeCallback(function(AuctionRaisedEvent $event) {
 							limite officielle de 1000 nodes<br>
 <br>
 							si un service tombe le redémarre, si une machine tombe cherche une autre machine qui correspond<br>
-							lifeprobe pour vérifier que le pod tourne bien
+							lifeprobe pour vérifier que le pod tourne bien <br>
+							next ER
 						</aside>
 					</section>
 
@@ -554,13 +563,13 @@ $pull->subscribeCallback(function(AuctionRaisedEvent $event) {
 							<small>Plug & play cluster communication</small>
 						</h2>
 						<ul>
-							<li>1 pod = 1 IP address</li>
+							<li>1 pod = 1 container = 1 IP address</li>
 							<li>1 service load balance X pods</li>
 							<li>1 service = 1 dns entry (ttl <1s)</li>
 						</ul>
 						<aside class="notes">
 							ER :
-							1 IP par pod (pod = worker, pusher, ect.)<br>
+							1 IP par pod (pod = worker, publisher, ect.)<br>
 							1 service pour le load balancing entre pods identiques<br>
 							via une entrée dns<br>
 							1 route par host, pas de problème de port, on peut peut avoir plusieurs ports 80 par ex<br>
@@ -605,7 +614,7 @@ kubectl rolling-update --image=domraider/worker:1.3.7 AuctionWorker
 							Pendant un court instant les deux versions peuvent fonctionner ensemble<br>
 <br>
 							VV : Synthèse : on a testé d'autre solutions, on préfère k8s qui est incassable depuis 1 an<br>
-							15 noeuds, 200 RC, 367 pods, 73 services<br>
+							15 noeuds, 200 RC, 367 containers, 73 services<br>
 
 							Conf mardi sur Kubernetes à 11H par Samuel Roze<br>
 
@@ -641,7 +650,8 @@ kubectl rolling-update --image=domraider/worker:1.3.7 AuctionWorker
 						<aside class="notes">
 							VV : L'enchère que l'on a vu tout à l'heure aura pu s'executer sur 3 machines, si je doit suivre sa trace en explorant les machines ça peut être long<br>
 							graylog, ou plein de services payants<br>
-							Sentry
+							Sentry <br>
+							next ER
 						</aside>
 					</section>
 
@@ -719,13 +729,18 @@ Besoin d'un build automatisé avec versionning (jenkins)<br>
 					</section>
 
 					<section>
-						<h1>RxNet</h1>
+						<h2>
+							<strong>RXNet</strong><br>
+							<small>ReactiveX network library in PHP</small>
+						</h2>
 						<p>
-							<a href="https://github.com/Domraider/rxnet">Examples and project can be found here</a></li>
+							<a href="https://github.com/Domraider/rxnet">https://github.com/Domraider/rxnet</a></li>
 						</p>
 						<aside class="notes">
 							VV : on a du développer une librairie pour gérer toutes les communications <br>
-							on a choisi de l'open sourcé pour le PHP tour
+							Actuellement composants réseaux ZMQ et HTTP encore beaucoup de choses à sortir de la prod pour
+							<br>
+							profiter de tous les avantages
 						</aside>
 					</section>
 
