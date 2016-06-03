@@ -37,46 +37,82 @@ class Actor
     protected $httpd;
     /** @var  RxThread */
     protected $rxThread;
+    /** @var Pool  */
+    protected $pool;
+    /** @var string  */
     protected $state = self::STATE_AVAILABLE;
 
-    public function __construct(LoopInterface $loop, Httpd $httpd, RxThread $rxThread)
+    public function __construct(LoopInterface $loop, Httpd $httpd)
     {
         $this->loop = $loop;
         $this->httpd = $httpd;
-        $this->rxThread = $rxThread;
+        $this->pool = new \Rxnet\Thread\RxPool(4, WorkerBus::class, [], $loop);
     }
 
     public function handle()
     {
+
         $this->httpd->route('GET', '/', function (HttpdRequest $request, HttpdResponse $response) {
             if ($this->state != self::STATE_AVAILABLE) {
+                // TODO add to mailbox :)
                 return $response->sendError("Actor is in {$this->state}");
             }
             $this->state = self::STATE_WORKING;
-            $response->json("OK");
 
-            $this->rxThread->handle(new SleepyDummy())
+            $response->json("OK")
                 ->subscribeCallback(
                     function () {
-                        echo "Job's done\n";
-                        $this->state = self::STATE_AVAILABLE;
-                    },
-                    function (\Exception $e) {
-                        echo "Ooopps : {$e->getMessage()}\n";
-                        $this->state = self::STATE_AVAILABLE;
+                        $this->pool->submit(new ThreadedHandler(new Command()), $this->loop)
+                            ->subscribeCallback(
+                                function (Event $event) {
+                                    echo "Job's done : {$event->data->cmd->dummy}\n";
+                                    $this->state = self::STATE_AVAILABLE;
+                                },
+                                function (\Exception $e) {
+                                    echo "Ooopps : {$e->getMessage()}\n";
+                                    $this->state = self::STATE_AVAILABLE;
+                                });
                     });
+
+
         });
 
         printf("Listen http on port 23002\n");
         $this->httpd->listen(23002);
     }
 }
-
-class SleepyDummy extends Thread
+class WorkerBus extends Worker {}
+/**
+ * Class ThreadedHandler
+ * use a worker for the bus that persist heavy content and stack thread
+ */
+class ThreadedHandler extends Thread
 {
+    public $cmd;
+    protected $state = "running";
+    public function __construct(Command $cmd)
+    {
+        $this->cmd = $cmd;
+    }
+    public function isRunning()
+    {
+        return $this->state === 'running';
+    }
+
     public function run()
     {
         echo "je run\n";
-        sleep(1);
+        sleep(4);
+        $this->cmd->dummy+=2;
+        //throw(new Exception("c'est la merde"));
+        $this->state = 'done';
     }
+}
+
+/**
+ * Class Command
+ * Must inherit Threaded or data will not be passed
+ */
+class Command  extends Threaded {
+    public $dummy = 1;
 }
