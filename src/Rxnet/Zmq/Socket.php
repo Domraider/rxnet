@@ -98,19 +98,8 @@ class Socket extends Observable
             if ($res instanceof \Exception) {
                 return $observer->onError($res);
             }
-
-            $poll = new \ZMQPoll();
-            $read = $write = [];
-            $poll->add($this->socket, \ZMQ::POLL_OUT);
-
-            for ($i = 0; $i < 1000; $i += 1) {
-                $events = $poll->poll($read, $write, 1);
-                if ($events) {
-                    $observer->onNext(new ZmqEvent('/zmq/sent', ['socket' => $res]));
-                    $observer->onCompleted();
-                }
-            }
-            return $observer->onError(new ConnectException("Socket is not answering"));
+            $observer->onNext(new ZmqEvent('/zmq/sent', ['socket' => $res]));
+            $observer->onCompleted();
         });
     }
 }

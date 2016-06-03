@@ -12,7 +12,7 @@ use Rxnet\Zmq\SocketWrapper;
 require __DIR__ . "/../vendor/autoload.php";
 
 $loop = Factory::create();
-$zmq = new RxZmq($loop);
+$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
 
 $server = new Server($loop);
 $endlessSubject = new EndlessSubject();
@@ -34,7 +34,7 @@ class Pusher
     /** @var Httpd  */
     protected $httpd;
 
-    public function __construct(LoopInterface $loop, RxZmq $zmq, Httpd $httpd)
+    public function __construct(LoopInterface $loop, \Rxnet\Zmq\ZeroMQ $zmq, Httpd $httpd)
     {
         $this->loop = $loop;
         $this->pusher = $zmq->push();

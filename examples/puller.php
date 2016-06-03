@@ -7,7 +7,7 @@ use Rxnet\Zmq\SocketWrapper;
 require __DIR__ . "/../vendor/autoload.php";
 
 $loop = Factory::create();
-$zmq = new RxZmq($loop);
+$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
 
 $puller = new Puller($zmq);
 $puller->handle();
@@ -21,7 +21,7 @@ class Puller
     /** @var SocketWrapper  */
     protected $puller;
 
-    public function __construct(RxZmq $zmq)
+    public function __construct(\Rxnet\Zmq\ZeroMQ $zmq)
     {
         $this->puller = $zmq->pull();
     }

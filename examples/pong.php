@@ -12,7 +12,7 @@ $loop = Factory::create();
 $serializer = new \Rxnet\Zmq\Serializer\MsgPack();
 $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$router = $zmq->router('tcp://127.0.0.1:2000', 'pong');
+$router = $zmq->router('tcp://127.0.0.1:2000');
 
 $router->subscribeCallback(function ($msg) use ($router) {
     var_dump($msg);

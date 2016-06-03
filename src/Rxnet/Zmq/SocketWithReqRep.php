@@ -27,7 +27,7 @@ class SocketWithReqRep extends Socket
                 return Observable::create(function (ObserverInterface $observer) use ($id) {
                     $req = new ZmqRequest();
                     $req->subscribe($observer);
-                    
+
                     $disposable = $this->filter(
                         function (Event $event) use ($id) {
                             return $event->hasLabel('id', $id);
@@ -35,10 +35,10 @@ class SocketWithReqRep extends Socket
                         ->take(1)
                         ->subscribe($req);
 
-                    $req->subscribeCallback(null, null, function() use($disposable) {
+                    $req->subscribeCallback(null, null, function () use ($disposable) {
                         $disposable->dispose();
                     });
-                    return new CallbackDisposable(function() use($disposable) {
+                    return new CallbackDisposable(function () use ($disposable) {
                         $disposable->dispose();
                     });
                 });
@@ -53,6 +53,7 @@ class SocketWithReqRep extends Socket
      */
     public function rep(Event $originalEvent, $data, $slotId = null)
     {
+
         if ($data instanceof Event) {
             $event = $data;
             $event->labels['rep'] = true;
