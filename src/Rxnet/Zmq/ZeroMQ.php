@@ -3,40 +3,43 @@ namespace Rxnet\Zmq;
 
 
 use React\EventLoop\LoopInterface;
+use Rxnet\Zmq\Serializer\Serializer;
 
 class ZeroMQ
 {
     protected $loop;
     protected $context;
-    public function __construct(LoopInterface $loop)
+    protected $serializer;
+    public function __construct(LoopInterface $loop, Serializer $serializer)
     {
         $this->loop = $loop;
-        $this->context = new \ZMQContext();
+        $this->serializer =$serializer;
+        $this->context = new \ZMQContext(10);
     }
 
     public function push($dsn = null) {
-        $socket = new SocketWithQa($this->context->getSocket(\ZMQ::SOCKET_PUSH), $this->loop);
+        $socket = new SocketWithQa($this->context->getSocket(\ZMQ::SOCKET_PUSH), $this->serializer, $this->loop);
         if($dsn) {
             $socket->bind($dsn);
         }
         return $socket;
     }
     public function pull($dsn = null) {
-        $socket = new Socket($this->context->getSocket(\ZMQ::SOCKET_PULL), $this->loop);
+        $socket = new Socket($this->context->getSocket(\ZMQ::SOCKET_PULL), $this->serializer, $this->loop);
         if($dsn) {
             $socket->connect($dsn);
         }
         return $socket;
     }
     public function router($dsn = null) {
-        $socket = new SocketWithQa($this->context->getSocket(\ZMQ::SOCKET_ROUTER), $this->loop);
+        $socket = new SocketWithReqRep($this->context->getSocket(\ZMQ::SOCKET_ROUTER), $this->serializer, $this->loop);
         if($dsn) {
             $socket->bind($dsn);
         }
         return $socket;
     }
     public function dealer($dsn = null, $identity = null) {
-        $socket = new Socket($this->context->getSocket(\ZMQ::SOCKET_DEALER), $this->loop);
+        $socket = new SocketWithReqRep($this->context->getSocket(\ZMQ::SOCKET_DEALER), $this->serializer, $this->loop);
         if($dsn) {
             $socket->connect($dsn, $identity);
         }

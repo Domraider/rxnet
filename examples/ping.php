@@ -9,12 +9,13 @@ use Rxnet\Zmq\SocketWrapper;
 require __DIR__ . "/../vendor/autoload.php";
 
 $loop = new \Rxnet\Loop\LibEvLoop();
-$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
+$serializer = new \Rxnet\Zmq\Serializer\MsgPack();
+$zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$dealer = $zmq->router('tcp://127.0.0.1:2000');
+$dealer = $zmq->dealer('tcp://127.0.0.1:2000', 'pong');
 
 $loop->addPeriodicTimer(1, function() use($dealer) {
-    $dealer->send('ping', 'pong')
+    $dealer->send('ping')
         ->subscribeCallback(
             function () {
                 echo "msg sent\n";

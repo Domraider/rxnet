@@ -26,11 +26,10 @@ class SocketWithQa extends Socket
 
         for($i = 0; $i < 1000; $i+=1) {
             $events = $poll->poll($read, $write, 1);
-            //var_dump($read, $write, $events);
+
             if($events) {
                 $observer->onNext(new ZmqEvent('/zmq/sent', ['socket' => $previous]));
-                $observer->onCompleted();
-                return;
+                return $observer->onCompleted();
             }
             $this->loop->tick();
         }

@@ -9,12 +9,13 @@ use Rxnet\Zmq\SocketWrapper;
 require __DIR__ . "/../vendor/autoload.php";
 
 $loop = Factory::create();
-$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
+$serializer = new \Rxnet\Zmq\Serializer\MsgPack();
+$zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$router = $zmq->dealer('tcp://127.0.0.1:2000', 'pong');
+$router = $zmq->router('tcp://127.0.0.1:2000', 'pong');
 
 $router->subscribeCallback(function ($msg) use ($router) {
-    echo "received {$msg}\n";
+    var_dump($msg);
 
 });
 $loop->run();
