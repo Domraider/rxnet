@@ -7,7 +7,7 @@ use React\EventLoop\LoopInterface;
 use Rx\Disposable\CallbackDisposable;
 use Rx\Observable;
 use Rx\ObserverInterface;
-use Rx\Zmq\ZmqRequest;
+use Rxnet\Zmq\ZmqRequest;
 use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
 

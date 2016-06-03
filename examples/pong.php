@@ -12,10 +12,12 @@ $loop = Factory::create();
 $serializer = new \Rxnet\Zmq\Serializer\MsgPack();
 $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$router = $zmq->router('tcp://127.0.0.1:2000');
-
-$router->subscribeCallback(function ($msg) use ($router) {
-    var_dump($msg);
-
+$router = $zmq->pull('tcp://127.0.0.1:2000');
+$i= 0;
+$router->subscribeCallback(function ($msg) use ($router, &$i) {
+    $i++;
+});
+$loop->addPeriodicTimer(1, function() use(&$i) {
+    echo "Received {$i} msg in 1s \n";
 });
 $loop->run();

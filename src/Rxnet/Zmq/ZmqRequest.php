@@ -1,5 +1,5 @@
 <?php
-namespace Rx\Zmq;
+namespace Rxnet\Zmq;
 use Rxnet\NotifyObserverTrait;
 use Rx\Subject\Subject;
 class ZmqRequest extends Subject

@@ -12,13 +12,16 @@ $loop = new \Rxnet\Loop\LibEvLoop();
 $serializer = new \Rxnet\Zmq\Serializer\MsgPack();
 $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$dealer = $zmq->dealer('tcp://127.0.0.1:2000', 'pong');
+$dealer = $zmq->push('tcp://127.0.0.1:2000');
+$i = 0;
 
-$loop->addPeriodicTimer(1, function() use($dealer) {
+$loop->addPeriodicTimer(.0001, function() use($dealer, &$i) {
+
     $dealer->send('ping')
         ->subscribeCallback(
-            function () {
-                echo "msg sent\n";
+            function () use(&$i) {
+                $i++;
+                //echo "msg sent\n";
             },
             function (\Exception $e) {
                 echo "{$e->getMessage()}\n";
@@ -26,5 +29,8 @@ $loop->addPeriodicTimer(1, function() use($dealer) {
         );
 });
 
+$loop->addPeriodicTimer(1, function() use(&$i) {
+    echo "sent {$i} msg in 1s \n";
+});
 
 $loop->run();
