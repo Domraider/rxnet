@@ -14,23 +14,25 @@ $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
 $dealer = $zmq->push('tcp://127.0.0.1:2000');
 $i = 0;
-
-$loop->addPeriodicTimer(.0001, function() use($dealer, &$i) {
-
-    $dealer->send('ping')
+$start = microtime(true);
+$todo = 10000;
+$loop->addPeriodicTimer(.00001, function($timer) use($dealer, &$i, &$start, $todo) {
+    if($i === $todo) {
+        $timer->cancel();
+        echo "took ".(microtime(true)-$start).' to send '.$todo.' messages\n';
+        return;
+    }
+    $dealer->sendRaw('ping')
         ->subscribeCallback(
             function () use(&$i) {
                 $i++;
                 //echo "msg sent\n";
             },
             function (\Exception $e) {
-                echo "{$e->getMessage()}\n";
+               // echo "{$e->getMessage()}\n";
             }
         );
 });
 
-$loop->addPeriodicTimer(1, function() use(&$i) {
-    echo "sent {$i} msg in 1s \n";
-});
 
 $loop->run();

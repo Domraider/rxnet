@@ -17,7 +17,7 @@ class ZeroMQ extends SocketWithQa
     {
         $this->loop = $loop;
         $this->serializer = $serializer ?: new MsgPack();
-        $this->context = $context ?: new \ZMQContext(10);
+        $this->context = $context ?: new \ZMQContext(1);
     }
 
     public function push($dsn = null)

@@ -17,7 +17,8 @@ $i= 0;
 $router->subscribeCallback(function ($msg) use ($router, &$i) {
     $i++;
 });
-$loop->addPeriodicTimer(1, function() use(&$i) {
-    echo "Received {$i} msg in 1s \n";
+$loop->addPeriodicTimer(5, function() use(&$i) {
+    echo "Received {$i} msg \n";
+    //$i = 0;
 });
 $loop->run();
