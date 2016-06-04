@@ -8,6 +8,7 @@ use Rx\Observable;
 use Rx\ObserverInterface;
 use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
+use Rxnet\Zmq\Exceptions\ConnectException;
 use Rxnet\Zmq\Serializer\Serializer;
 
 class Socket extends Observable
@@ -26,7 +27,9 @@ class Socket extends Observable
 
         $this->loop->addReadStream($fd, [$this, 'handleEvent']);
     }
-
+    public function getSocket() {
+        return $this->socket;
+    }
     public function handleEvent()
     {
         while (true) {
@@ -58,6 +61,8 @@ class Socket extends Observable
         if ($identity) {
             $this->socket->setSockOpt(\ZMQ::SOCKOPT_IDENTITY, $identity);
         }
+        $this->socket->setSockOpt(\ZMQ::SOCKOPT_SNDTIMEO, 100);
+        $this->socket->setSockOpt(\ZMQ::SOCKOPT_LINGER, 100);
         $this->socket->connect($dsn);
     }
 

@@ -15,7 +15,7 @@ class ZmqEvent extends Event
 {
 
     /**
-     * @return Socket
+     * @return \ZMQSocket
      */
     public function getSocket() {
         return $this->data['socket'];

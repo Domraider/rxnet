@@ -12,17 +12,18 @@ $loop = new \Rxnet\Loop\LibEvLoop();
 $serializer = new \Rxnet\Zmq\Serializer\MsgPack();
 $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$dealer = $zmq->push('tcp://127.0.0.1:2000');
+$dealer = $zmq->push('ipc://test.sock');
 $i = 0;
 $start = microtime(true);
-$todo = 10000;
-$loop->addPeriodicTimer(.00001, function($timer) use($dealer, &$i, &$start, $todo) {
+$todo = 100000;
+$event = new Event('ping');
+$loop->addPeriodicTimer(.000001, function($timer) use($dealer, &$i, &$start, $todo, $event) {
     if($i === $todo) {
         $timer->cancel();
         echo "took ".(microtime(true)-$start).' to send '.$todo.' messages\n';
         return;
     }
-    $dealer->sendRaw('ping')
+    $dealer->send($event)
         ->subscribeCallback(
             function () use(&$i) {
                 $i++;

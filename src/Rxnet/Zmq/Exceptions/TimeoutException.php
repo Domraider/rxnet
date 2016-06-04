@@ -6,7 +6,7 @@
  * Time: 18:31
  */
 
-namespace Rxnet\Zmq;
+namespace Rxnet\Zmq\Exceptions;
 
 
 class TimeoutException extends \Exception

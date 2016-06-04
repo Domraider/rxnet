@@ -12,13 +12,29 @@ $loop = Factory::create();
 $serializer = new \Rxnet\Zmq\Serializer\MsgPack();
 $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
-$router = $zmq->pull('tcp://127.0.0.1:2000');
-$i= 0;
-$router->subscribeCallback(function ($msg) use ($router, &$i) {
-    $i++;
-});
-$loop->addPeriodicTimer(5, function() use(&$i) {
-    echo "Received {$i} msg \n";
-    //$i = 0;
+
+class watch {
+    protected $i=0;
+    public function __construct($zmq)
+    {
+        echo "start\n";
+        $router = $zmq->pull('ipc://test.sock');
+        $router->subscribeCallback(function ($msg) use ($router) {
+            $this->i++;
+        });
+    }
+    public function destruct()
+    {
+        echo "Received ici {$this->i} msg \n";
+    }
+}
+
+$watch = new watch($zmq);
+
+$loop->addReadStream(STDIN, function()  use($watch, $loop) {
+    $loop->stop();
+    $watch->destruct();
+
 });
 $loop->run();
+
