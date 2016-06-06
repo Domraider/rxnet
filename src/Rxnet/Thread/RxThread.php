@@ -9,32 +9,48 @@ use Rxnet\Event\Event;
 class RxThread
 {
     protected $loop;
-
-    public function __construct(LoopInterface $loop)
+    protected $worker;
+    public function __construct(LoopInterface $loop, \Worker $worker = null)
     {
-
         $this->loop = $loop;
+
+        $this->worker = ($worker) ? : new \Worker();
+
+        $this->worker->start();
     }
 
-    public function handle(\Thread $thread)
-    {
-        echo "Start thread\n";
+    public function work(\Thread $thread) {
+
+        $this->worker->stack($thread);
 
         return Observable::create(function (ObserverInterface $observer) use ($thread) {
-            $thread->start();
-            echo "Thread started wait for execution\n";
+            while ($thread->isRunning()) {
+                $this->loop->tick();
+            }
+            $observer->onNext(new Event('/thread/ok', $thread));
+            $observer->onCompleted();
+        });
+    }
+    public function handle(\Thread $thread)
+    {
+        $thread->start();
+        echo "Start thread with ID {$thread->getCurrentThreadId()}\n";
+
+        return Observable::create(function (ObserverInterface $observer) use ($thread) {
+
             while ($thread->isRunning()) {
                 $this->loop->tick();
             }
             try {
                 echo "Thread finished\n";
-                $res = $thread->join();
-                $observer->onNext(new Event('/thread/ok', $res));
+                $thread->join();
+                $observer->onNext(new Event('/thread/ok', $thread));
                 $observer->onCompleted();
             } catch (\Exception $e) {
                 echo "Thread error\n";
                 $observer->onError($e);
             }
+            unset($thread);
         });
 
 
