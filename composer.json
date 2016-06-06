@@ -5,7 +5,6 @@
     "php": ">=5.6.0",
     "ext-zmq": "*",
     "ext-curl": "*",
-    "ext-pthreads": "*",
     "reactivex/rxphp": "^1.1",
     "react/react": "0.4.*",
     "ramsey/uuid": "^3.3",
