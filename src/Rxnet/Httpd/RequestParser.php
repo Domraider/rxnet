@@ -57,6 +57,10 @@ class RequestParser
             $this->request->onHead($psrRequest);
 
             $encoding = $this->request->getHeader("Transfer-Encoding");
+            if (in_array($this->request->getMethod(), ['GET', 'HEAD'])) {
+                $this->notifyCompleted();
+                return;
+            }
             switch ($encoding) {
                 case "chunked":
                     $this->parserCallable = [$this, 'parseChunk'];
@@ -92,6 +96,7 @@ class RequestParser
      *
      */
     public function notifyCompleted() {
+        $this->request->labels['length'] = strlen($this->request->getBody());
         $this->request->notifyNext(new Event("/httpd/request/end", $this->request, $this->request->labels));
         $this->request->notifyCompleted();
     }
@@ -103,7 +108,6 @@ class RequestParser
     public function parseChunk($data)
     {
         if (!$data) {
-            $this->notifyCompleted();
             return;
         }
         // Detect end of transfer
