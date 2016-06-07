@@ -39,7 +39,7 @@ class ZeroMQ
 
     public function router($dsn = null)
     {
-        $socket = new Socket($this->context->getSocket(\ZMQ::SOCKET_ROUTER), $this->serializer, $this->loop);
+        $socket = new SocketWithReqRep($this->context->getSocket(\ZMQ::SOCKET_ROUTER), $this->serializer, $this->loop);
         if ($dsn) {
             $socket->bind($dsn);
         }
