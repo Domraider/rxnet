@@ -39,6 +39,7 @@ abstract class Connector extends Observable
      */
     public $contextParams = [];
     protected $labels = [];
+    protected $socket;
 
     /**
      * Connector constructor.
@@ -111,7 +112,17 @@ abstract class Connector extends Observable
         if (!$socket && !is_resource($socket)) {
             throw new \Exception('Unable to create client socket : ' . $error);
         }
+        $this->socket = $socket;
         return $socket;
+    }
+
+    public function disconnect()
+    {
+        if (!is_resource($this->socket)) {
+            return;
+        }
+        $this->loop->removeStream($this->socket);
+        fclose($this->socket);
     }
 
     /**
