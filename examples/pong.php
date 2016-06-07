@@ -8,7 +8,7 @@ use Rxnet\Zmq\SocketWrapper;
 
 require __DIR__ . "/../vendor/autoload.php";
 
-$loop = Factory::create();
+$loop = new \React\EventLoop\StreamSelectLoop();
 $serializer = new \Rxnet\Zmq\Serializer\MsgPack();
 $zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
 
