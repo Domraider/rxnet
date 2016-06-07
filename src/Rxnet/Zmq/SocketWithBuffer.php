@@ -26,7 +26,7 @@ class SocketWithBuffer extends SocketWithReqRep
         while (true) {
             $events = $this->socket->getSockOpt(\ZMQ::SOCKOPT_EVENTS);
 
-            $hasEvents = $events & \ZMQ::POLL_IN || $events & \ZMQ::POLL_OUT;
+            $hasEvents = $events & \ZMQ::POLL_IN || ($events & \ZMQ::POLL_OUT && $this->buffer->listening);
             if (!$hasEvents) {
                 break;
             }

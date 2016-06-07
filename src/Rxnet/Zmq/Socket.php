@@ -33,7 +33,7 @@ class Socket extends Observable
         while (true) {
             $events = $this->socket->getSockOpt(\ZMQ::SOCKOPT_EVENTS);
 
-            $hasEvents = $events & \ZMQ::POLL_IN || $events & \ZMQ::POLL_OUT;
+            $hasEvents = $events & \ZMQ::POLL_IN;
             if (!$hasEvents) {
                 break;
             }
