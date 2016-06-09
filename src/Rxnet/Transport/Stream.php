@@ -56,9 +56,17 @@ class Stream extends Observable
     {
         $buffer = new Buffer($this->socket, $this->loop, $data);
         // Write error close the stream, write completed wait for data
-        $buffer->subscribeCallback(null, [$this, "close"], function () {
+        
+        // Strange behaviour on streamSelect ugly patch
+        if ($this->loop instanceof StreamSelectLoop) {
+            $buffer->subscribeCallback(null, [$this, "close"], function () {
+                $this->loop->addReadStream($this->socket, array($this, 'read'));
+            });
+        }
+        else {
+            $buffer->subscribeCallback(null, [$this, "close"]);
             $this->loop->addReadStream($this->socket, array($this, 'read'));
-        });
+        }
 
 
         return $buffer;
