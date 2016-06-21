@@ -60,7 +60,9 @@ class Socket extends Observable
             }
         }
     }
-
+    public function setSerializer(Serializer $serializer) {
+        $this->serializer = $serializer;
+    }
     public function getSocket()
     {
         return $this->socket;
