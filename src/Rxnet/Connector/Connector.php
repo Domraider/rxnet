@@ -70,12 +70,11 @@ abstract class Connector extends Observable
         $this->port = $port;
         $this->labels = compact("host", "port");
         try {
-            $this->createSocketForAddress();
+            return $this->createSocketForAddress();
         } catch (\Exception $e) {
             //\Log::emergency("Impossible to connect : {$e->getMessage()}");
             return $this->error($e);
         }
-        return $this;
     }
 
     /**
