@@ -2,6 +2,7 @@
 namespace Rxnet\Connector;
 
 use React\Socket\ConnectionException;
+use Rx\Disposable\CallbackDisposable;
 use Rx\Observable;
 use Rx\ObserverInterface;
 use Rxnet\Event\ConnectorEvent;
@@ -13,7 +14,12 @@ use Rxnet\Transport\Stream;
 class Tcp extends Connector
 {
     protected $protocol = "tcp";
-
+    public $contextParams = [
+        "ssl" => [
+            "verify_peer" => false,
+            "verify_peer_name" => false,
+        ],
+    ];
     /**
      * @return Observable\AnonymousObservable
      * @throws \Exception
@@ -26,6 +32,12 @@ class Tcp extends Connector
         return Observable::create(function(ObserverInterface $observer) use($socket) {
             $this->loop->addWriteStream($socket, function($socket) use($observer) {
                 $this->onConnected($socket, $observer);
+            });
+            return new CallbackDisposable(function() use($socket, $observer) {
+                $this->loop->removeStream($socket);
+                if(is_resource($socket)) {
+                    fclose($socket);
+                }
             });
         });
     }
@@ -43,7 +55,7 @@ class Tcp extends Connector
             return;
         }
         $observer->onNext(new ConnectorEvent("/connector/connected", new Stream($socket, $this->loop), $this->labels));
-        $observer->onCompleted();
+        //$observer->onCompleted();
     }
 
 }
