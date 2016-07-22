@@ -13,7 +13,6 @@ class Stream extends Observable
     use NotifyObserverTrait;
     protected $socket;
     protected $loop;
-    protected $observer;
     public $bufferSize = 30720;
 
     /**
@@ -21,11 +20,10 @@ class Stream extends Observable
      * @param $socket
      * @param LoopInterface $loop
      */
-    public function __construct($socket, LoopInterface $loop, ObserverInterface $observer)
+    public function __construct($socket, LoopInterface $loop)
     {
         $this->socket = $socket;
         $this->loop = $loop;
-        $this->observer = $observer;
         stream_set_blocking($this->socket, 0);
 
         // Use unbuffered read operations on the underlying stream resource.
@@ -110,7 +108,6 @@ class Stream extends Observable
         if (is_resource($this->socket)) {
             fclose($this->socket);
         }
-        $this->observer->onCompleted();
         $this->notifyCompleted();
     }
 
