@@ -1,13 +1,14 @@
 {
   "name": "domraider/rxnet",
   "description": "Rx connector for PHP",
+  "version": "0.2.1",
   "require": {
     "php": ">=5.6.0",
     "ext-zmq": "*",
     "ext-curl": "*",
     "reactivex/rxphp": "^1.1",
-    "react/react": "0.4.*",
-    "ramsey/uuid": "^3.3",
+    "react/react": "^0.4.2",
+    "ramsey/uuid": ">=2.8.0",
     "nikic/fast-route": "^0.7.0",
     "guzzlehttp/guzzle": "^6.0",
     "league/json-guard": "0.3.*",

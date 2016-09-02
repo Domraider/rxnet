@@ -47,7 +47,7 @@ class ZeroMQ
 
     public function dealer($dsn = null, $identity = null)
     {
-        $socket = new SocketWithReqRep($this->context->getSocket(\ZMQ::SOCKET_DEALER), $this->serializer, $this->loop);
+        $socket = new SocketWithBuffer($this->context->getSocket(\ZMQ::SOCKET_DEALER), $this->serializer, $this->loop);
         if ($dsn) {
             $socket->connect($dsn, $identity);
         }

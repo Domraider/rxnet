@@ -1,6 +1,8 @@
 <?php
 namespace Rxnet\Connector;
 
+use Rx\Observable;
+use Rx\ObserverInterface;
 use Rxnet\Event\Event;
 
 /**
@@ -37,14 +39,12 @@ class Tls extends Tcp
     }
 
     /**
-     * @return resource
+     * @return Observable\AnonymousObservable
      */
     protected function createSocketForAddress()
     {
-        $this->notifyNext(new Event('/connector/connecting', $this));
         $this->context = stream_context_create($this->contextParams);
         return parent::createSocketForAddress();
-
     }
 
 }

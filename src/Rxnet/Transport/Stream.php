@@ -2,8 +2,9 @@
 namespace Rxnet\Transport;
 
 use React\EventLoop\LoopInterface;
-use Rxnet\NotifyObserverTrait;
 use Rx\Observable;
+use Rx\ObserverInterface;
+use Rxnet\NotifyObserverTrait;
 use Rxnet\Stream\StreamEvent;
 use Rxnet\Transport\Stream\Buffer;
 
@@ -12,7 +13,7 @@ class Stream extends Observable
     use NotifyObserverTrait;
     protected $socket;
     protected $loop;
-    public $bufferSize = 24546;
+    public $bufferSize = 30720;
 
     /**
      * Transport constructor.
@@ -39,15 +40,19 @@ class Stream extends Observable
     /**
      * @return resource
      */
-    public function getSocket() {
+    public function getSocket()
+    {
         return $this->socket;
     }
+
     /**
      * @return LoopInterface
      */
-    public function getLoop() {
+    public function getLoop()
+    {
         return $this->loop;
     }
+
     /**
      * @param string $data
      * @return Observable
@@ -60,7 +65,6 @@ class Stream extends Observable
             $this->loop->addReadStream($this->socket, array($this, 'read'));
         });
 
-
         return $buffer;
     }
 
@@ -71,18 +75,28 @@ class Stream extends Observable
     {
         $data = fread($stream, $this->bufferSize);
         $length = strlen($data);
-        $this->notifyNext(new StreamEvent("/stream/data", $data, ['length'=>$length]));
+        $this->notifyNext(new StreamEvent("/stream/data", $data, ['length' => $length]));
 
-        if($length <= 2) {
+        if ($length <= 2) {
             $data = fread($stream, $this->bufferSize);
             $length = strlen($data);
-            $this->notifyNext(new StreamEvent("/stream/data", $data, ['length'=>$length]));
+            $this->notifyNext(new StreamEvent("/stream/data", $data, ['length' => $length]));
         }
 
         if (!is_resource($stream) || feof($stream)) {
             //\Log::info("Close stream");
             $this->close();
         }
+    }
+
+    public function pause()
+    {
+        $this->loop->removeReadStream($this->socket);
+    }
+
+    public function resume()
+    {
+        $this->loop->addReadStream($this->socket, [$this, 'read']);
     }
 
     /**

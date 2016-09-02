@@ -25,49 +25,57 @@ class Socket extends Observable
         $this->serializer = $serializer;
         $fd = $this->socket->getSockOpt(\ZMQ::SOCKOPT_FD);
 
-        $this->loop->addReadStream($fd, [$this, 'handleEvent']);
+        $this->loop->addReadStream($fd, [$this, 'handleEvents']);
     }
-    public function getSocket() {
-        return $this->socket;
-    }
-    public function handleEvent()
+
+    public function handleEvents()
     {
         while (true) {
             $events = $this->socket->getSockOpt(\ZMQ::SOCKOPT_EVENTS);
 
-            $hasEvents = ($events & \ZMQ::POLL_IN);
+            $hasEvents = $events & \ZMQ::POLL_IN;
             if (!$hasEvents) {
                 break;
             }
+            $this->handleReadEvents($events);
+        }
+    }
 
-            if ($events & \ZMQ::POLL_IN) {
-                $messages = (array) $this->socket->recvmulti(\ZMQ::MODE_DONTWAIT);
+    protected function handleReadEvents($events)
+    {
+        if ($events & \ZMQ::POLL_IN) {
+            $messages = (array)$this->socket->recvmulti(\ZMQ::MODE_DONTWAIT);
 
-                if (false !== $messages) {
-
-                    if (1 === count($messages)) {
-                        $event = new ZmqEvent('/event', $messages[0]);
-                        //$event = $this->serializer->unserialize($messages[0]);
-                    } else {
-                        // Router message, first is address
-                        $event = new ZmqEvent('/event', $messages[1], ['address'=>$messages[0]]);
-                        //$event = $this->serializer->unserialize($messages[1]);
-
-                        //$event->labels['address'] = $messages[0];
+            if (false !== $messages) {
+                if (1 === count($messages)) {
+                    $event = $this->serializer->unserialize($messages[0]);
+                } else {
+                    // Router message, first is address
+                    $event = $this->serializer->unserialize($messages[1]);
+                    if ($event instanceof Event) {
+                        $event->labels['address'] = $messages[0];
                     }
-                    $this->notifyNext($event);
                 }
+                $this->notifyNext($event);
             }
         }
+    }
+    public function setSerializer(Serializer $serializer) {
+        $this->serializer = $serializer;
+    }
+    public function getSocket()
+    {
+        return $this->socket;
     }
 
     public function connect($dsn, $identity = null)
     {
+
         if ($identity) {
             $this->socket->setSockOpt(\ZMQ::SOCKOPT_IDENTITY, $identity);
         }
-        $this->socket->setSockOpt(\ZMQ::SOCKOPT_SNDTIMEO, 100);
-        $this->socket->setSockOpt(\ZMQ::SOCKOPT_LINGER, 100);
+        //$this->socket->setSockOpt(\ZMQ::SOCKOPT_SNDTIMEO, 100);
+        //$this->socket->setSockOpt(\ZMQ::SOCKOPT_LINGER, 100);
         $this->socket->connect($dsn);
     }
 
@@ -85,8 +93,8 @@ class Socket extends Observable
             $id = Uuid::uuid4()->toString();
             $event->labels['id'] = $id;
         }
-        return self::sendRaw($event, $to)
-            ->map(function (ZmqEvent $evt) use($event) {
+        return $this->sendRaw($event, $to)
+            ->map(function (ZmqEvent $evt) use ($event) {
                 $evt->labels['id'] = $event->getLabel('id');
                 return $evt;
             });

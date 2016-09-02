@@ -1,6 +1,8 @@
 <?php
 namespace Rxnet\Connector;
 
+use Rx\Observable;
+use Rx\ObserverInterface;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\Transport\Datagram;
 
@@ -18,9 +20,10 @@ class Udp extends Connector
     {
         $socket = parent::createSocketForAddress();
 
-        $stream = new Datagram($socket, $this->loop);
-        $this->notifyNext(new ConnectorEvent('/connector/connected', $stream));
-        $this->notifyCompleted();
-        return $stream;
+        return Observable::create(function(ObserverInterface $observer) use($socket) {
+            $stream = new Datagram($socket, $this->loop);
+            $observer->onNext(new ConnectorEvent('/connector/connected', $stream));
+            $observer->onCompleted();
+        });
     }
 }
