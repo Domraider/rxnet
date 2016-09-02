@@ -42,13 +42,18 @@ class Socket extends Observable
 
             if ($events & \ZMQ::POLL_IN) {
                 $messages = (array) $this->socket->recvmulti(\ZMQ::MODE_DONTWAIT);
+
                 if (false !== $messages) {
+
                     if (1 === count($messages)) {
-                        $event = $this->serializer->unserialize($messages[0]);
+                        $event = new ZmqEvent('/event', $messages[0]);
+                        //$event = $this->serializer->unserialize($messages[0]);
                     } else {
                         // Router message, first is address
-                        $event = $this->serializer->unserialize($messages[1]);
-                        $event->labels['address'] = $messages[0];
+                        $event = new ZmqEvent('/event', $messages[1], ['address'=>$messages[0]]);
+                        //$event = $this->serializer->unserialize($messages[1]);
+
+                        //$event->labels['address'] = $messages[0];
                     }
                     $this->notifyNext($event);
                 }

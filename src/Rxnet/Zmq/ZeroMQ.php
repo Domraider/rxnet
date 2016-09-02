@@ -16,7 +16,7 @@ class ZeroMQ
     {
         $this->loop = $loop;
         $this->serializer = $serializer ?: new MsgPack();
-        $this->context = $context ?: new \ZMQContext(3);
+        $this->context = $context ?: new \ZMQContext(5);
     }
 
     public function push($dsn = null)
@@ -27,7 +27,6 @@ class ZeroMQ
         }
         return $socket;
     }
-
     public function pull($dsn = null)
     {
         $socket = new Socket($this->context->getSocket(\ZMQ::SOCKET_PULL), $this->serializer, $this->loop);

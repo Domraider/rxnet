@@ -48,7 +48,7 @@ Quand un message est reçu : soit la queue est vide et on a des workers on passe
 Une mailbox se charge de stocker les messages en attendant que des workers soient disponibles
  * memory : stocke en mémoire les messages sous forme d'object queue
  * redis : stock en redis les objets, dans ce cas un poll régulier est fait en plus pour vérifier la base
- * file : stock en fichier, ajoute les nouveaux en fin de fichier et stocke l'état du pointeur
+ * file : stock en fichier, ajoute les nouveaux en fin de fichier et stocke l'état du pointeur lors de la lecture, un démon régulier réécrit le fichier
  * mixed : stocke en mémoire jusqu'à x puis stocke en redis en failover, pareil pour le dépilage
  
 Pour le dispatch des jobs on utilise un schéma router / dealer :
@@ -58,6 +58,10 @@ Pour le dispatch des jobs on utilise un schéma router / dealer :
  * quand il est de nouveau dispo il est rajouté dans la liste
  * un keep alive vérifie l'état des workers et les enlévent de la liste si ils sont lents
  * si un worker bloque plus de temps il se fait redémarrer
+ 
+ Chaque worker a un serveur HTTP et a un délai maximum d'execution
+ Si le délai d'execution dépasse le maximum, le serveur HTTP répond 500 sinon il répond 200
+ Quand il répond 500 il alerte le broker et datadog
  
 On peut ajouter un plugin au niveau du router : 
  * garde en mémoire le message envoyé pendant x secondes
