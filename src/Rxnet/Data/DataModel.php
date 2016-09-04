@@ -3,14 +3,13 @@ namespace Rxnet\Data;
 
 
 use League\JsonGuard\Dereferencer;
+use League\JsonGuard\FormatExtension;
 use League\JsonGuard\ValidationError;
 use League\JsonGuard\Validator;
 use PhpOption\None;
 use PhpOption\Option;
 use Rx\Observable;
-use Rxnet\Data\Loaders\LocalLoader;
 use Rxnet\Data\FormatExtensions\DomainFormatExtension;
-use Underscore\Types\Object;
 
 /**
  * Class DataModel
@@ -27,6 +26,10 @@ abstract class DataModel implements \JsonSerializable
      */
     protected $schemas = [];
     /**
+     * @var FormatExtension[]
+     */
+    protected $formatExtensions = [];
+    /**
      * @var Dereferencer
      */
     protected $deReferencer;
@@ -34,10 +37,12 @@ abstract class DataModel implements \JsonSerializable
     /**
      * DataModel constructor.
      * @param Dereferencer $deReferencer think of the loader
+     * @param FormatExtension[] $formatExtensions one or many format extensions
      */
-    public function __construct(Dereferencer $deReferencer)
+    public function __construct(Dereferencer $deReferencer, array $formatExtensions = [])
     {
         $this->deReferencer = $deReferencer ?: new Dereferencer();
+        $this->formatExtensions = $formatExtensions;
     }
 
     /**
@@ -75,7 +80,10 @@ abstract class DataModel implements \JsonSerializable
             // validate
             foreach ($this->schemas as $schema) {
                 $validator = new Validator($payload, $schema);
-                $validator->registerFormatExtension("domain", new DomainFormatExtension());
+                foreach ($this->formatExtensions as $format=>$class) {
+                    $validator->registerFormatExtension($format, new $class);
+                }
+
 
                 if ($validator->fails()) {
                     foreach ($validator->errors() as $error) {
