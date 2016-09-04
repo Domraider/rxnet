@@ -15,7 +15,10 @@
     "daverandom/libdns": "^1.1",
     "bunny/bunny": "@dev",
     "clue/redis-react": "^1.0",
-    "league/booboo": "1.0.*"
+    "league/booboo": "1.0.*",
+    "voryx/event-loop": "0.2.*",
+    "phpoption/phpoption": "^1.5",
+    "anahkiasen/underscore-php": "^2.0"
   },
   "require-dev": {
     "phpspec/prophecy": "1.6.1",
@@ -29,7 +32,8 @@
     "peridot-php/peridot-prophecy-plugin": "1.1.0",
     "bcrowe/growl": "^2.0",
     "cloak/peridot-cloak-plugin": "^2.0",
-    "holyshared/file-fixture": "^1.0"
+    "holyshared/file-fixture": "^1.0",
+    "symfony/console": "^3.1"
   },
   "license": "MIT",
   "authors": [

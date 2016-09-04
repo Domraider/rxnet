@@ -159,7 +159,6 @@ class Redis extends Subject
                 $data = $parser->pushIncoming($event->getData());
                 $data = $data[0]->getValueNative();
 
-                \Log::info("Sentinel says master is {$data[0]}:{$data[1]} try to connect");
                 return $this->connect("{$data[0]}:{$data[1]}");
             });
     }
@@ -179,7 +178,6 @@ class Redis extends Subject
 
                 $promise->then(
                     function (StreamingClient $client) use ($subject) {
-                        \Log::info("Redis is connected");
                         $this->client = $client;
                         $subject->onNext($this);
                         $subject->onCompleted();

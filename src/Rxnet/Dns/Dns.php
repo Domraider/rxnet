@@ -1,14 +1,14 @@
 <?php
 namespace Rxnet\Dns;
 
-
-use App\Exceptions\InvalidAttributesException;
+use \InvalidAttributesException;
 use LibDNS\Decoder\DecoderFactory;
 use LibDNS\Encoder\EncoderFactory;
 use LibDNS\Messages\MessageFactory;
 use LibDNS\Messages\MessageTypes;
 use LibDNS\Records\QuestionFactory;
-use Rx\Event\RequestEvent;
+use Rx\DisposableInterface;
+use Rxnet\Event\RequestEvent;
 use Rx\Exception\ExceptionWithLabels;
 use Rx\Observable;
 use Rx\Subject\Subject;
@@ -18,8 +18,9 @@ use Rxnet\Event\Event;
 use Rxnet\Middleware\MiddlewareInterface;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
+use Underscore\Types\Arrays;
 
-class Dns2 extends Subject
+class Dns extends Subject
 {
     use NotifyObserverTrait;
 
@@ -48,7 +49,7 @@ class Dns2 extends Subject
         $types = [
             "A" => 1, "AAAA" => 28, "AFSDB" => 18, "CAA" => 257, "CERT" => 37, "CNAME" => 5, "DHCID" => 49, "DLV" => 32769, "DNAME" => 39, "DNSKEY" => 48, "DS" => 43, "HINFO" => 13, "KEY" => 25, "KX" => 36, "ISDN" => 20, "LOC" => 29, "MB" => 7, "MD" => 3, "MF" => 4, "MG" => 8, "MINFO" => 14, "MR" => 9, "MX" => 15, "NAPTR" => 35, "NS" => 2, "NULL" => 10, "PTR" => 12, "RP" => 17, "RT" => 21, "SIG" => 24, "SOA" => 6, "SPF" => 99, "SRV" => 33, "TXT" => 16, "WKS" => 11, "X25" => 19
         ];
-        if (!$code = array_get($types, $type)) {
+        if (!$code = Arrays::get($types, $type)) {
             throw new InvalidAttributesException("No DNS type exists for {$type}");
         }
         return $code;
@@ -70,7 +71,7 @@ class Dns2 extends Subject
         }
         return $this->lookup($host, 'A')
             ->map(function (Event $event) use($host) {
-                $ip = head($event->data["answers"]);
+                $ip = Arrays::random($event->data["answers"]);
                 if(!$ip) {
 
                 }
@@ -104,7 +105,7 @@ class Dns2 extends Subject
         // Build DNS request
         $labels = compact('domain', 'type', 'server');
         $req = new DnsRequest($requestPacket, $labels);
-        $this->notifyNext(new RequestEvent('/das/request', ['client' => $this, 'connector' => $this->connector, 'request' => $request], $labels));
+        $this->notifyNext(new RequestEvent('/dns/request', ['client' => $this, 'connector' => $this->connector, 'request' => $request], $labels));
 
         return $this->connector->connect($server, 53)
             ->flatMap(function (ConnectorEvent $event) use ($req) {

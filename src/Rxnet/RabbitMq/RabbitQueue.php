@@ -9,22 +9,47 @@ use Rxnet\Contract\EventInterface;
 
 class RabbitQueue
 {
-    const QUEUE_DISK = 'queue_disk';
-    const QUEUE_RAM = 'queue_ram';
+    const QUEUE_PASSIVE = 'passive';
+    const QUEUE_DURABLE = "durable";
+    const QUEUE_EXCLUSIVE = "exclusive";
+    const QUEUE_AUTO_DELETE = "auto_delete";
+
+    const DELETE_IF_EMPTY = 'if_empty';
+    const DELETE_IF_UNUSED = 'if_unused';
+
+
     protected $mq;
     protected $exchange;
     protected $queue;
 
-    public function __construct(RabbitMq $mq, $queue, $exchange = 'amq.direct', $opts = [])
+    public function __construct(RabbitMq $mq, $queue, $opts = [])
     {
         $this->mq = $mq;
         $this->queue = $queue;
-        $this->exchange = $exchange;
     }
 
-    public function __call($name, $arguments)
-    {
-        return call_user_func_array([$this->mq, $name], $arguments);
+    public function create($opts = [self::QUEUE_DURABLE]) {
+        $params = [$this->queue];
+        $params[] = in_array(self::QUEUE_PASSIVE, $opts);
+        $params[] = in_array(self::QUEUE_DURABLE, $opts);
+        $params[] = in_array(self::QUEUE_EXCLUSIVE, $opts);
+        $params[] = in_array(self::QUEUE_AUTO_DELETE, $opts);
+        return call_user_func_array([$this->mq->channel, 'queueDeclare'], $params);
+    }
+    public function bind($routingKey, $exchange = 'amq.direct') {
+        return $this->mq->channel->queueBind($this->queue, $exchange, $routingKey);
+    }
+    public function purge() {
+        return $this->mq->channel->queuePurge($this->queue);
+    }
+    public function delete($opts = []) {
+        $params = [$this->queue];
+        $params[] = in_array(self::DELETE_IF_UNUSED, $opts);
+        $params[] = in_array(self::DELETE_IF_EMPTY, $opts);
+        return call_user_func_array([$this->mq->channel, 'queueDelete'], $params);
+    }
+    public function setQos($prefetch) {
+        return $this->mq->setConsumePrefetch($prefetch);
     }
     public function consume($cast = null, $forceName = null, $opts = []) {
         return $this->mq->consume($this->queue, $opts)
@@ -40,65 +65,5 @@ class RabbitQueue
                 }
                 return $message;
             });
-    }
-
-    /**
-     * @param string $mode
-     * @param null $cast
-     * @param bool $keepName
-     * @return \Closure
-     */
-    public function publish($mode = self::QUEUE_RAM, $cast = null, $keepName = false)
-    {
-        return function (EventInterface $event) use ($cast, $mode, $keepName) {
-            $headers = [
-                'labels' => json_encode($event->getLabels()),
-            ];
-            if($keepName) {
-                $headers['name'] = $event->getName();
-            }
-            if($mode === self::QUEUE_DISK) {
-                $headers['delivery-mode'] = 2;
-            }
-            $data = $event->getData();
-            if($cast) {
-                $data = new $cast($data);
-            }
-            return $this->mq->publish($data,  $headers, $this->exchange, $this->queue)
-                ->map(function() use($event){
-                    return $event;
-                });
-        };
-    }
-
-    /**
-     * @param $delay
-     * @param string $mode
-     * @param null $cast
-     * @param bool $keepName
-     * @return \Closure
-     */
-    public function publishLater($delay, $mode = self::QUEUE_RAM, $cast = null, $keepName = false)
-    {
-        return function (EventInterface $event) use ($cast, $mode, $delay, $keepName) {
-            $headers = [
-                'labels' => json_encode($event->getLabels()),
-                'x-delay' => $delay
-            ];
-            if($keepName) {
-                $headers['name'] = $event->getName();
-            }
-            if($mode === self::QUEUE_DISK) {
-                $headers['delivery-mode'] = 2;
-            }
-            $data = $event->getData();
-            if($cast) {
-                $data = new $cast($data);
-            }
-            return $this->mq->publish($data,  $headers, 'direct.delayed', $this->queue)
-                ->map(function() use($event){
-                    return $event;
-                });
-        };
     }
 }

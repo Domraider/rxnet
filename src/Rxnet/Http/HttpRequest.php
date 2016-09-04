@@ -10,6 +10,7 @@ use Rxnet\Event\ConnectorEvent;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Stream\StreamEvent;
 use Rxnet\Transport\Stream;
+use Underscore\Types\Arrays;
 
 class HttpRequest extends Subject
 {
@@ -51,7 +52,7 @@ class HttpRequest extends Subject
         $headers = $request->getHeaders();
         foreach ($headers as $key => $v) {
             if (is_array($v)) {
-                $v = head($v);
+                $v = Arrays::first($v);
             }
             $req[] = "{$key}: {$v}";
         }
@@ -83,7 +84,7 @@ class HttpRequest extends Subject
 
     public function dispose()
     {
-        if(!$this->stream instanceof Stream) {
+        if (!$this->stream instanceof Stream) {
             parent::dispose();
             return;
         }
@@ -133,7 +134,7 @@ class HttpRequest extends Subject
             $response = \GuzzleHttp\Psr7\parse_response($headers);
             $this->response = $response;
 
-            $encoding = head($response->getHeader('Transfer-Encoding'));
+            $encoding = Arrays::first($response->getHeader('Transfer-Encoding'));
 
 
             switch ($encoding) {
@@ -145,7 +146,7 @@ class HttpRequest extends Subject
 
                     $this->parserCallable = [$this, 'parseContentLength'];
                     if ($length = $response->getHeader("Content-Length")) {
-                        $this->contentLength = (int)head($length);
+                        $this->contentLength = (int)Arrays::first($length);
                     }
             }
 
@@ -195,7 +196,7 @@ class HttpRequest extends Subject
             $this->buffer .= $this->parsePartialChunk($data);
         }
 
-        if($end) {
+        if ($end) {
             $this->completed();
         }
     }

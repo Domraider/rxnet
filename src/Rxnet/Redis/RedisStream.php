@@ -1,6 +1,7 @@
 <?php
 namespace Rxnet\Redis;
 
+use Rx\Observable;
 use Rxnet\Transport\Stream;
 
 class RedisStream extends Stream

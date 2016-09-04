@@ -3,17 +3,17 @@ namespace Rxnet\Http;
 
 
 use App\Exceptions\InvalidAttributesException;
-use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use React\EventLoop\LoopInterface;
-use Rxnet\Dns\Dns2;
+use Rx\DisposableInterface;
+use Rxnet\Dns\Dns;
 use Rx\Observable;
-use Rx\Scheduler\EventLoopScheduler;
 use Rxnet\Connector\Tcp;
 use Rxnet\Connector\Tls;
 use Rxnet\Middleware\MiddlewareInterface;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
+use Underscore\Types\Arrays;
 
 /**
  * Class Http
@@ -47,7 +47,7 @@ class Http extends Observable
      */
     protected $dns;
 
-    public function __construct(LoopInterface $loop, EndlessSubject $observable, Dns2 $dns)
+    public function __construct(LoopInterface $loop, EndlessSubject $observable, Dns $dns)
     {
         $this->loop = $loop;
         $this->observable = $observable;
@@ -82,13 +82,13 @@ class Http extends Observable
      */
     public function request($method, $url, array $opts = [])
     {
-        $headers = array_get($opts, 'headers', []);
+        $headers = Arrays::get($opts, 'headers', []);
 
         // Set content body, guzzle fix
-        if ($body = array_get($opts, 'json')) {
+        if ($body = Arrays::get($opts, 'json')) {
             $body = json_encode($body);
             $headers['Content-Type'] = 'application/json';
-        } elseif (!$body = array_get($opts, 'body')) {
+        } elseif (!$body = Arrays::get($opts, 'body')) {
             $body = '';
         }
 
@@ -102,14 +102,14 @@ class Http extends Observable
         }
         /* @var Request $request */
         // Guzzle compatibility
-        if ($query = array_get($opts, 'query')) {
+        if ($query = Arrays::get($opts, 'query')) {
             $uri = $request->getUri();
             foreach ($query as $k => $v) {
                 $uri = $uri->withQueryValue($request->getUri(), $k, $v);
             }
             $request = $request->withUri($uri);
         }
-        if ($proxy = array_get($opts, 'proxy')) {
+        if ($proxy = Arrays::get($opts, 'proxy')) {
             if (is_string($proxy)) {
                 $proxy = parse_url($proxy);
             }

@@ -55,7 +55,7 @@ class RabbitMq
                 return $c->channel();
             });
 
-        return \Rx\fromPromise($promise)
+        return \Rxnet\fromPromise($promise)
             ->catchError(function($error) {
                 \Log::error("RabbitMQ got an error {$error->getMessage()} try to reconnect");
                 return Observable::timer(2*1000, new EventLoopScheduler($this->loop))
@@ -70,7 +70,7 @@ class RabbitMq
     public function channel()
     {
         $promise = $this->bunny->channel();
-        return \Rx\fromPromise($promise);
+        return \Rxnet\fromPromise($promise);
     }
 
     public function setConsumePrefetch($int)
@@ -82,7 +82,10 @@ class RabbitMq
     {
         return new RabbitQueue($this, $name, $exchange, $opts);
     }
-
+    public function exchange($name = 'amq.direct', $opts = [])
+    {
+        return new RabbitExchange($this, $name, $opts);
+    }
     /**
      * @param $queue
      * @param null $consumerId
@@ -138,7 +141,7 @@ class RabbitMq
     public function get($queue, $noAck = false)
     {
         $promise = $this->channel->get($queue, $noAck);
-        return \Rx\fromPromise($promise)
+        return \Rxnet\fromPromise($promise)
             ->map([$this, 'unserialize']);
     }
 
@@ -150,13 +153,13 @@ class RabbitMq
         }
         $data = $this->serialize($data);
         $promise = $this->channel->publish($data, $headers, $exchange, $routingKey, false, $immediate);
-        return \Rx\fromPromise($promise);
+        return \Rxnet\fromPromise($promise);
     }
 
     public function ack(Message $message)
     {
         $promise = $this->channel->ack($message);
-        return \Rx\fromPromise($promise);
+        return \Rxnet\fromPromise($promise);
     }
 
     /**
@@ -169,14 +172,14 @@ class RabbitMq
     {
         $message = $this->serialize($message);
         $promise = $this->channel->nack($message, false, $requeue);
-        return \Rx\fromPromise($promise);
+        return \Rxnet\fromPromise($promise);
     }
 
     public function reject(Message $message, $requeue = true)
     {
         $message = $this->serialize($message);
         $promise = $this->channel->reject($message, $requeue);
-        return \Rx\fromPromise($promise);
+        return \Rxnet\fromPromise($promise);
     }
 
     public function retryLater(Message $message, $delay, $exchange = 'direct.delayed')

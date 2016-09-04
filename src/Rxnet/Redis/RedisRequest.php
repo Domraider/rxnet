@@ -6,6 +6,7 @@ use Clue\Redis\Protocol\Parser\ResponseParser;
 use Rx\Subject\Subject;
 use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
+use Underscore\Types\Arrays;
 
 class RedisRequest extends Subject
 {
@@ -26,7 +27,7 @@ class RedisRequest extends Subject
     public function onNext($event) {
         $data = $this->parser->pushIncoming($event->data);
 
-        $this->notifyNext(new Event("/redis/response", head($data)->getValueNative()));
+        $this->notifyNext(new Event("/redis/response", Arrays::first($data)->getValueNative()));
         $this->notifyCompleted();
     }
 }
