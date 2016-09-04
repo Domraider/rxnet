@@ -37,7 +37,7 @@ abstract class DataModel implements \JsonSerializable
     /**
      * DataModel constructor.
      * @param Dereferencer $deReferencer think of the loader
-     * @param FormatExtension[] $formatExtensions one or many format extensions
+     * @param FormatExtension[] $formatExtensions one or many format extensions on the validator
      */
     public function __construct(Dereferencer $deReferencer, array $formatExtensions = [])
     {
@@ -47,23 +47,24 @@ abstract class DataModel implements \JsonSerializable
 
     /**
      * DataModel generator with custom schemas for validation
-     * To use on a ->map(
-     * @param array $schemas
+     * To use on a ->map()
+     * @param array $schemas ['http://my.com/model.json', 'file://...']
      * @return \Closure
      */
-    public function factory($schemas = ["root-domain"]) {
+    public function factory($schemas = []) {
         $deReferencedSchemas = [];
+        // DeReference once for this factory
         foreach ($schemas as $schema) {
             $deReferencedSchemas[$schema] = $this->deReferencer->dereference($schema);
         }
         return function($data) use($deReferencedSchemas) {
             $data = $this->toStdClass($data);
-            $closure = $this->validate();
-            $closure($data);
 
             $model = clone($this);
             $model->setPayload($data);
             $model->schemas = $deReferencedSchemas;
+            $closure = $model->validate();
+            $closure($data);
 
             return $model;
         };
