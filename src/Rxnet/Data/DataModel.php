@@ -7,6 +7,7 @@ use League\JsonGuard\ValidationError;
 use League\JsonGuard\Validator;
 use PhpOption\None;
 use PhpOption\Option;
+use Rx\Observable;
 use Rxnet\Data\Loaders\LocalLoader;
 use Rxnet\Data\FormatExtensions\DomainFormatExtension;
 use Underscore\Types\Object;
@@ -111,13 +112,21 @@ abstract class DataModel implements \JsonSerializable
      * Flexible getter
      *
      * ```php
-     * $data->attribute('key.sub')->get()
-     * $data->attribute('my.sub.key')->getOrCall(function() { return 'fallBackValue';});
-     * $data->attribute('my.sub.key')->getOrElse(2);
+     * // Get value or throw
+     * $data->attribute('key.sub')->get();
+     * // Get value or throw custom exception
      * $data->attribute('m.s.k')->getOrThrow(new \LogicException('does not exists'));
-     *
-     * // Check if object exists
+     * // Or call some closure
+     * $data->attribute('my.sub.key')->getOrCall(function() { return 'fallBackValue';});
+     * // Or use default value
+     * $data->attribute('my.sub.key')->getOrElse(2);
+     * // Check if it exists
      * $data->attribute('m.s.k')->isDefined();
+     * // Value is an array convert to observable
+     * $data->attribute('my.array')
+     *  ->map([Observable, 'fromArray')
+     *  ->get()
+     *  ->subscribeCallback(...);
      * ```
      *
      * @see https://github.com/schmittjoh/php-option
