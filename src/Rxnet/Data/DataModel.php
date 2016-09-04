@@ -25,38 +25,42 @@ abstract class DataModel implements \JsonSerializable
      * @var \stdClass[]
      */
     protected $schemas = [];
+    /**
+     * @var Dereferencer
+     */
+    protected $deReferencer;
 
     /**
      * DataModel constructor.
-     * @param array $schemas
-     * @param string $path
+     * @param Dereferencer $deReferencer think of the loader
      */
-    public function __construct($schemas = ["root-domain"], $path = "local://%s.json")
+    public function __construct(Dereferencer $deReferencer)
     {
-        $deref = new Dereferencer();
-        $deref->registerLoader(new LocalLoader(), 'local');
-        foreach ($schemas as $schema) {
-            $this->schemas[$schema] = $deref->dereference(sprintf($path, $schema));
-        }
+        $this->deReferencer = $deReferencer ?: new Dereferencer();
     }
-    public function factory() {
-        
-    }
+
     /**
-     * DataModel factory, to use on a map
-     * @param $data
-     * @return DataModel
+     * DataModel generator with custom schemas for validation
+     * To use on a ->map(
+     * @param array $schemas
+     * @return \Closure
      */
-    public function __invoke($data)
-    {
-        $data = $this->toStdClass($data);
-        $closure = $this->validate();
-        $closure($data);
+    public function factory($schemas = ["root-domain"]) {
+        $deReferencedSchemas = [];
+        foreach ($schemas as $schema) {
+            $deReferencedSchemas[$schema] = $this->deReferencer->dereference($schema);
+        }
+        return function($data) use($deReferencedSchemas) {
+            $data = $this->toStdClass($data);
+            $closure = $this->validate();
+            $closure($data);
 
-        $model = clone($this);
-        $model->setPayload($data);
+            $model = clone($this);
+            $model->setPayload($data);
+            $model->schemas = $deReferencedSchemas;
 
-        return $model;
+            return $model;
+        };
     }
 
     /**
@@ -104,20 +108,28 @@ abstract class DataModel implements \JsonSerializable
     }
 
     /**
-     * @param $key
-     * @param null $default
+     * Flexible getter
+     *
+     * ```php
+     * $data->attribute('key.sub')->get()
+     * $data->attribute('my.sub.key')->getOrCall(function() { return 'fallBackValue';});
+     * $data->attribute('my.sub.key')->getOrElse(2);
+     * $data->attribute('m.s.k')->getOrThrow(new \LogicException('does not exists'));
+     *
+     * // Check if object exists
+     * $data->attribute('m.s.k')->isDefined();
+     * ```
+     *
+     * @see https://github.com/schmittjoh/php-option
+     * @param string $key
      * @return None|Option
      */
-    public function get($key, $default = null)
+    public function attribute($key)
     {
         $object = $this->payload;
         foreach (explode('.', $key) as $segment) {
             if (!is_object($object) || !isset($object->{$segment})) {
-                $none = None::create();
-                if($default) {
-                    return $none->orElse($default);
-                }
-                return $none;
+                return None::create();
             }
 
             $object = $object->{$segment};
@@ -127,23 +139,12 @@ abstract class DataModel implements \JsonSerializable
     }
 
     /**
-     * Check if a nested attribute exists
-     * @param string $key my.nested.key
-     * @return bool
-     */
-    public function exists($key)
-    {
-        $compare = md5(microtime(), true);
-        return ($this->get($key, $compare) == $compare);
-    }
-
-    /**
      * @param $key
      * @return mixed
      */
     public function __get($key)
     {
-        return $this->get($key);
+        return $this->attribute($key)->get();
     }
 
     /**
