@@ -56,152 +56,52 @@ class RabbitMq
             });
 
         return \Rxnet\fromPromise($promise)
-            ->catchError(function($error) {
-                \Log::error("RabbitMQ got an error {$error->getMessage()} try to reconnect");
-                return Observable::timer(2*1000, new EventLoopScheduler($this->loop))
-                    ->flatMap([$this, 'connect']);
-            })
             ->map(function (Channel $channel) {
                 return $this->channel = $channel;
             });
 
     }
 
-    public function channel()
-    {
-        $promise = $this->bunny->channel();
-        return \Rxnet\fromPromise($promise);
-    }
-
-    public function setConsumePrefetch($int)
-    {
-        return $this->channel->qos(null, $int);
-    }
-
-    public function queue($name, $exchange = 'amq.direct', $opts = [])
-    {
-        return new RabbitQueue($this, $name, $exchange, $opts);
-    }
-    public function exchange($name = 'amq.direct', $opts = [])
-    {
-        return new RabbitExchange($this, $name, $opts);
-    }
     /**
-     * @param $queue
-     * @param null $consumerId
-     * @param array $opts
+     * Open a new channel and attribute it to given queues or exchanges
+     * @param RabbitQueue[]|RabbitExchange[] $bind
      * @return Observable\AnonymousObservable
      */
-    public function consume($queue, $consumerId = null, $opts = [])
+    public function channel($bind = [])
     {
-        return Observable::create(
-            function (ObserverInterface $observer) use ($queue, $consumerId, $opts) {
-
-                $params = [
-                    'callback' => [$observer, 'onNext'],
-                    'queue' => $queue,
-                    'consumerTag' => $consumerId,
-                    'noLocal' => in_array(self::CHANNEL_NO_LOCAL, $opts, true),
-                    'noAck' => in_array(self::CHANNEL_NO_ACK, $opts, true),
-                    'exclusive' => in_array(self::CHANNEL_EXCLUSIVE, $opts, true),
-                    'noWait' => in_array(self::CHANNEL_NO_WAIT, $opts, true),
-                ];
-                $promise = call_user_func_array([$this->channel, 'consume'], $params);
-
-                $promise->then(null, [$observer, 'onError']);
-            })
-            ->map([$this, 'unserialize']);
-
-    }
-
-    public function unserialize(Message $message)
-    {
-        //var_dump($message);
-        $message->content = msgpack_unpack($message->content);
-
-        return $message;
-    }
-
-    public function serialize($data)
-    {
-        if ($data instanceof Message) {
-            $data->content = $this->serializer->serialize($data->content);
-            return $data;
+        if(!is_array($bind)) {
+            $bind = func_get_args();
         }
-        return $this->serializer->serialize($data);
-
-    }
-
-    /**
-     * Pop one element from the queue
-     * @param $queue
-     * @param bool $noAck
-     * @return Observable
-     */
-    public function get($queue, $noAck = false)
-    {
-        $promise = $this->channel->get($queue, $noAck);
+        $promise = $this->bunny->channel();
         return \Rxnet\fromPromise($promise)
-            ->map([$this, 'unserialize']);
-    }
-
-    public function publish($data, $headers = [], $exchange = '', $routingKey = '', $immediate = false)
-    {
-        if ($data instanceof EventInterface) {
-            $headers['labels'] = json_encode($data->labels);
-            $headers['name'] = $data->getName();
-        }
-        $data = $this->serialize($data);
-        $promise = $this->channel->publish($data, $headers, $exchange, $routingKey, false, $immediate);
-        return \Rxnet\fromPromise($promise);
-    }
-
-    public function ack(Message $message)
-    {
-        $promise = $this->channel->ack($message);
-        return \Rxnet\fromPromise($promise);
+            ->map(function(Channel $channel) use ($bind){
+                foreach ($bind as $obj) {
+                    $obj->setChannel($channel);
+                }
+                return $channel;
+            });
     }
 
     /**
-     * Not acknowledge and add at top of queue (will be next one)
-     * @param Message $message
-     * @param bool $requeue
-     * @return Observable
+     * @param $name
+     * @param string $exchange
+     * @param array $opts
+     * @return RabbitQueue
      */
-    public function nack(Message $message, $requeue = true)
+    public function queue($name, $exchange = 'amq.direct', $opts = [])
     {
-        $message = $this->serialize($message);
-        $promise = $this->channel->nack($message, false, $requeue);
-        return \Rxnet\fromPromise($promise);
+        return new RabbitQueue($this->channel, $name, $exchange, $opts);
     }
 
-    public function reject(Message $message, $requeue = true)
+    /**
+     * @param string $name
+     * @param array $opts
+     * @return RabbitExchange
+     */
+    public function exchange($name = 'amq.direct', $opts = [])
     {
-        $message = $this->serialize($message);
-        $promise = $this->channel->reject($message, $requeue);
-        return \Rxnet\fromPromise($promise);
+        return new RabbitExchange($this->channel, $this->serializer, $name, $opts);
     }
 
-    public function retryLater(Message $message, $delay, $exchange = 'direct.delayed')
-    {
-        $content = $message->content;
-        $headers = $message->headers;
-        $headers = array_merge($headers, ['x-delay' => $delay]);
-
-        return $this->reject($message, false)
-            ->subscribeCallback(function () use ($content, $message, $headers, $exchange) {
-                $this->publish($content, $headers, $exchange, $message->routingKey);
-            });
-    }
-
-    public function rejectToBottom(Message $message)
-    {
-        $content = $message->content;
-        $headers = $message->headers;
-        return $this->reject($message, false)
-            ->subscribeCallback(function () use ($content, $message, $headers) {
-                $this->publish($content, $headers, $message->exchange, $message->routingKey);
-            });
-    }
 
 }

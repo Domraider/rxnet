@@ -1,101 +1,12 @@
 <?php
-namespace Rxnet\Data;
+namespace Rxnet\Contract;
 
 
-use League\JsonGuard\Dereferencer;
-use League\JsonGuard\FormatExtension;
-use League\JsonGuard\ValidationError;
-use League\JsonGuard\Validator;
 use PhpOption\None;
 use PhpOption\Option;
-use Rx\Observable;
-use Rxnet\Data\FormatExtensions\DomainFormatExtension;
 
-/**
- * Class DataModel
- * @package Rx\Data
- */
-abstract class DataModel implements \JsonSerializable
+trait DataContainerTrait
 {
-    /**
-     * @var \stdClass
-     */
-    protected $payload;
-    /**
-     * @var \stdClass[]
-     */
-    protected $schemas = [];
-    /**
-     * @var FormatExtension[]
-     */
-    protected $formatExtensions = [];
-    /**
-     * @var Dereferencer
-     */
-    protected $deReferencer;
-
-    /**
-     * DataModel constructor.
-     * @param Dereferencer $deReferencer think of the loader
-     * @param FormatExtension[] $formatExtensions one or many format extensions on the validator
-     */
-    public function __construct(Dereferencer $deReferencer, array $formatExtensions = [])
-    {
-        $this->deReferencer = $deReferencer ?: new Dereferencer();
-        $this->formatExtensions = $formatExtensions;
-    }
-
-    /**
-     * DataModel generator with custom schemas for validation
-     * To use on a ->map()
-     * @param array $schemas ['http://my.com/model.json', 'file://...']
-     * @return \Closure
-     */
-    public function factory($schemas = []) {
-        $deReferencedSchemas = [];
-        // DeReference once for this factory
-        foreach ($schemas as $schema) {
-            $deReferencedSchemas[$schema] = $this->deReferencer->dereference($schema);
-        }
-        return function($data) use($deReferencedSchemas) {
-            $data = $this->toStdClass($data);
-
-            $model = clone($this);
-            $model->setPayload($data);
-            $model->schemas = $deReferencedSchemas;
-            $closure = $model->validate();
-            $closure($data);
-
-            return $model;
-        };
-    }
-
-    /**
-     * Validation sugar to use on a flatMap
-     * Validate against schemas of the constructors
-     * @return \Closure
-     */
-    public function validate()
-    {
-        return function ($payload) {
-            // validate
-            foreach ($this->schemas as $schema) {
-                $validator = new Validator($payload, $schema);
-                foreach ($this->formatExtensions as $format=>$class) {
-                    $validator->registerFormatExtension($format, new $class);
-                }
-
-
-                if ($validator->fails()) {
-                    foreach ($validator->errors() as $error) {
-                        /* @var ValidationError $error */
-                        print_r($error->toArray());
-                    }
-                }
-            }
-        };
-    }
-
     /**
      * Set data model attribute(s)
      * @param string $key my.sub.key root attribute or sub with dot format
@@ -175,12 +86,16 @@ abstract class DataModel implements \JsonSerializable
         $this->payload = $data;
         return $this;
     }
+    public function getPayload() {
+        return $this->payload;
+    }
 
     /**
      * @return array
      */
     public function toArray()
     {
+        // Ugly but for json guard it's better, avoid :)
         return (array)json_decode(json_encode($this), true);
     }
 
@@ -238,5 +153,4 @@ abstract class DataModel implements \JsonSerializable
         }
         return $payload;
     }
-
 }

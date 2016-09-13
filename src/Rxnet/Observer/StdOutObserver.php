@@ -11,6 +11,14 @@ use Rxnet\Event\Event;
 class StdOutObserver implements ObserverInterface
 {
     /**
+     * @param $event
+     */
+    public function __invoke($event)
+    {
+        $this->onNext($event);
+    }
+
+    /**
      * @param Event $event
      */
     public function onNext($event)

@@ -50,6 +50,9 @@
   "autoload": {
     "psr-0": {
       "Rxnet": "src/"
-    }
+    },
+    "files": [
+      "src/Rxnet/functions.php"
+    ]
   }
 }
