@@ -91,7 +91,27 @@ class RequestParser
             $this->notifyCompleted();
         }
     }
-
+  public function parseChunkedBuffer($data)
+    {
+        preg_match_all('/^([ABCDEF0123456789]{2,4})\r\n|\r\n([ABCDEF0123456789]{2,4})\r\n/i', $data, $matches);
+        if (!$matches[0]) {
+            // No chunk limiter, add
+            return $data;
+        }
+        $return = '';
+        foreach ($matches[0] as $k => $control) {
+            // Search control position with it's \r\n in string
+            $controlPos = strpos($data, $control) + strlen($control);
+            // Extract chunk length from control
+            $control = rtrim(trim($control));
+            $chunkLength = hexdec($control);
+            // Extract from data the chunk
+            $chunk = substr($data, $controlPos, $chunkLength);
+            $return .= $chunk;
+            //echo "Control {$control} is at pos {$controlPos} and has {$chunkLength} data \n----\n{$chunk}\n----\n";
+        }
+        return $return;
+    }
     /**
      *
      */
@@ -114,19 +134,14 @@ class RequestParser
         if ($end = strpos($data, "0\r\n\r\n")) {
             $data = substr($data, 0, $end);
         }
+        $this->buffer.= $data;
+        $this->request->onData($data);
 
-        $control = strpos($data, "\n");
-
-        if ($control && $control < 10) {
-            $control += 1; // missing \r
-            $length = hexdec(substr($data, 0, $control));
-            $chunk = substr($data, $control, $length);
-            $this->request->onData($chunk);
-        } else { // Big chunk : fread is smaller than chunk ?
-            $this->request->onData($data);
-        }
         if ($end) {
+            $this->buffer = $this->parseChunkedBuffer($this->buffer);
+            $this->request->setBody($this->buffer);
             $this->notifyCompleted();
+            $this->buffer = '';
         }
     }
 }
