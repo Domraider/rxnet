@@ -34,7 +34,8 @@ $dns = new Dns();
 $dns->resolve('www.google.fr')
   ->subscribe(new StdoutObserver());
 
-echo Rx\await($dns->soa('www.google.fr'));
+$response = Rx\await($dns->soa('www.google.fr'));
+var_dump($response);
 ```
 
 
