@@ -1,8 +1,8 @@
 # RxNet
-RxPhp is a great work that bring us Reactive programming : asynchronous programming for human being.  
-You can play with reactiveX on [RxMarble.com](http://rxmarbles.com/) and find all the available operators on the official [Reactivex.io](http://reactivex.io/documentation/operators.html) website or read an [interesting introduction](https://gist.github.com/staltz/868e7e9bc2a7b8c1f754).
+RxPhp is a great work that brings us Reactive programming : asynchronous programming for human being.  
+You can play with reactiveX on [RxMarble.com](http://rxmarbles.com/), find all the available operators on the official [Reactivex.io](http://reactivex.io/documentation/operators.html) website or read an [interesting introduction](https://gist.github.com/staltz/868e7e9bc2a7b8c1f754).
 
-RxNet is an effort to bring it battery included, for now :
+RxNet is an effort to bring it battery included.
 
 * [Dns](#Dns)
 * [Http](#Http)
@@ -10,8 +10,10 @@ RxNet is an effort to bring it battery included, for now :
 * [RabbitMq](#RabbitMq)
 * [Redis](#Redis)
 * [ZeroMq](#ZeroMq)
+* Others outside
+  * [voryx/pg-async](https://github.com/voryx/PgAsync) postgres client
 
-Thanks to [react/react](https://github.com/reactphp/react), its marvelous reactor pattern and all work done with it, many are just simple port.
+Thanks to [react/react](https://github.com/reactphp/react), its marvelous reactor pattern and all work done with it, many are just simple wrappers.
 
 ## Installation
 With composer : ```domraider/rxnet```
@@ -29,12 +31,10 @@ No extra extensions are needed
 ```php
 $dns = new Dns();
 // All types of queries are allowed
-$dns->a('www.google.fr')
+$dns->resolve('www.google.fr')
   ->subscribe(new StdoutObserver());
 
-// You can specify nameserver to use
-$dns->soa('google.fr', '8.8.4.4')
-  ->subscribe(new StdoutObserver());
+echo Rx\await($dns->soa('www.google.fr'));
 ```
 
 
@@ -111,13 +111,6 @@ $httpd->route('POST', '/{var}', function(PsrRequest $request, PsrResponse $respo
   $var = $request->getRouteParam('var');
   $response->json(['var'=>$var];
 });
-$httpd->route('POST', '/logs', function(PsrRequest $request, PsrResponse $response) {
-  $response->writeHead([]);
-  for($i = 0; $i < 10; $i++) {
-    $response->write("Streaming chunk {$i}");
-  }
-  $response->end();
-});
 $httpd->listen(8080);
 ```
 
@@ -141,31 +134,18 @@ Wrapper from [jakubkulhan/bunny](https://github.com/jakubkulhan/bunny) that work
 
 No extra extensions are needed
 
-### Producer
-
-```php
-$serializer = new MsgPackSerializer();
-$bunny = new RabbitMq($serializer);
-
-for($i = 0, $i < 1000, $i++) {
-  $obj = new SdObject(['test'=>true]);
-  $bunny->publish($obj, 'my-exchange', 'queue1');
-}
-```
-
 ### Consumer with channel declaration
 
 ```php
-$bunny = new RabbitMq(new MsgPackSerializer());
-$bunny->connect('user:password@localhost:5712/vhost')
-  ->flatMap(RxNet\all([
+$bunny = new RabbitMq('rabbit://user:password@localhost:5712/vhost', new MsgPackSerializer());
+$bunny->connect()
+  ->zip([
       	// declare queues and binding 
-    	// or configure them by ui
     	$bunny->exchange('my-exchange', [$bunny::DIRECT, $bunny::PERSIST]),
     	$bunny->bind('my-exchange', ['queues1', 'queue3']),
         $bunny->bind('my-other-exchange', ['queue2'])
 	]))
-  ->flatMap($bunny->consume(['queue1']))
+  ->merge($bunny->consume(['queue1']))
   ->subscribe(new StdoutObserver());
 ```
 
@@ -176,11 +156,10 @@ Wrapper from [clue/redis](https://github.com/clue/php-redis-react) that reached 
 No extra extensions are needed
 
 ```php
-$serializer = new MsgPackSerializer();
-$redis = new Redis($serializer);
+$redis = new Redis();
 
 // Wait for redis to be ready
-$redis = RxNet\await($redis->connect());
+$redis = RxNet\await($redis->connect('redis://localhost:6379'));
 
 $redis->get('key')
   ->subscribe(new StdoutObserver());
@@ -197,7 +176,7 @@ Message exchange through tcp (or ipc or inproc).
 Needs [Pecl ZMQ](https://pecl.php.net/package/zmq) extension to work
 
 Router/dealer is a both direction communication. 
-Dealer has to start before router can send to identify, after both can crash a queue is managed by ZeroMq.
+Dealer has to start before router to identify.
 
 ```php
 $zmq = new ZeroMq(new MsgPackSerializer());
@@ -240,8 +219,7 @@ Classic procedural is always possible
 ```php
 $observable = $http->get('http://www.google.fr')
   ->timeout(1000)
-  ->retry(3)
-  ->delay(100);
+  ->retry(3);
 
 # Loop continue to go forward during await
 $response = Rxnet\await($observable);

@@ -40,6 +40,10 @@ class RabbitMq
     {
         $this->loop = EventLoop::getLoop();
         $this->serializer = ($serializer) ? :new MsgPack();
+        if(is_string($cfg)) {
+            $cfg = parse_url($cfg);
+            $cfg['vhost'] = $cfg['path'];
+        }
         $this->cfg = $cfg;
     }
 
