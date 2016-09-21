@@ -5,12 +5,14 @@ use Rxnet\Event\Event;
 use Rxnet\Zmq\RxZmq;
 use Rxnet\Zmq\SocketWrapper;
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
+
 
 $loop = Factory::create();
-$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
+$zmq = new \Rxnet\Zmq\RxZmq($loop);
 $scheduler = new EventLoopScheduler($loop);
 
+// Yes a rabbit router can become an httpd server !
 $router = $zmq->router();
 $router->getSocket()->setSockOpt(ZMQ::SOCKOPT_ROUTER_RAW, 1);
 

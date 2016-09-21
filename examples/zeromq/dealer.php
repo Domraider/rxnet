@@ -6,7 +6,7 @@ use Rxnet\Event\Event;
 use Rxnet\Zmq\RxZmq;
 use Rxnet\Zmq\SocketWrapper;
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
 
 $loop = Factory::create();
 $zmq = new RxZmq($loop);

@@ -4,10 +4,10 @@ use Rxnet\Event\Event;
 use Rxnet\Zmq\RxZmq;
 use Rxnet\Zmq\SocketWrapper;
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
 
 $loop = Factory::create();
-$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
+$zmq = new \Rxnet\Zmq\RxZmq($loop);
 
 $puller = new Puller($zmq);
 $puller->handle();
@@ -21,7 +21,7 @@ class Puller
     /** @var SocketWrapper  */
     protected $puller;
 
-    public function __construct(\Rxnet\Zmq\ZeroMQ $zmq)
+    public function __construct(\Rxnet\Zmq\RxZmq $zmq)
     {
         $this->puller = $zmq->pull();
     }

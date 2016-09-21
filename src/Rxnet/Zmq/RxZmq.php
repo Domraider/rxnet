@@ -3,10 +3,10 @@ namespace Rxnet\Zmq;
 
 
 use React\EventLoop\LoopInterface;
-use Rxnet\Zmq\Serializer\MsgPack;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\MsgPack;
+use Rxnet\Serializer\Serializer;
 
-class ZeroMQ
+class RxZmq
 {
     protected $loop;
     protected $context;

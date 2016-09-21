@@ -6,7 +6,7 @@ use Bunny\Channel;
 use Bunny\Message;
 use Rx\Observable;
 use Rx\ObserverInterface;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\Serializer;
 
 class RabbitQueue
 {
@@ -24,7 +24,7 @@ class RabbitQueue
     protected $channel;
     protected $serializer;
 
-    public function __construct(Channel $channel, Serializer $serializer, $queue, $opts = [])
+    public function __construct(Channel $channel = null, Serializer $serializer, $queue, $opts = [])
     {
         $this->serializer = $serializer;
         $this->channel = $channel;

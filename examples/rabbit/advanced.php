@@ -16,7 +16,7 @@ $rabbit = new \Rxnet\RabbitMq\RabbitMq([[
     "vhost" => "/",
     "user" => "guest",
     "password" => "guest",
-]]);
+]], new \Rxnet\Serializer\Serialize());
 \Rxnet\await($rabbit->connect());
 
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
@@ -28,7 +28,7 @@ $queue->consume('consumer-2')
     ->subscribeCallback(function (RabbitMessage $subject) use ($debug, $rabbit) {
         // Everything that append will be to my logger
         //$subject->subscribe($debug);
-        // Give 30s to handle the subject or stop all
+        // Give 30s to handle the subject or reject it to bottom (with all its changes)
         $subject->timeout(30 * 1000)
             ->subscribeCallback(
             // Ignore onNext

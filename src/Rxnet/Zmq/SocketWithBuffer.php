@@ -5,7 +5,7 @@ namespace Rxnet\Zmq;
 use React\EventLoop\LoopInterface;
 use Rx\Observable;
 use Rx\ObserverInterface;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\Serializer;
 
 class SocketWithBuffer extends SocketWithReqRep
 {

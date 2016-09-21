@@ -1,11 +1,11 @@
 <?php
 use Rxnet\Event\Event;
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
 
 $loop = new \Rxnet\Loop\LibEvLoop();
-$serializer = new \Rxnet\Zmq\Serializer\MsgPack();
-$zmq = new \Rxnet\Zmq\ZeroMQ($loop, $serializer);
+$serializer = new \Rxnet\Serializer\MsgPack();
+$zmq = new \Rxnet\Zmq\RxZmq($loop, $serializer);
 
 $rep = $zmq->rep('ipc://test.sock');
 $i = 0;

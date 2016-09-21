@@ -12,13 +12,14 @@ $rabbit = new \Rxnet\RabbitMq\RabbitMq([[
     "vhost" => "/",
     "user" => "guest",
     "password" => "guest",
-]]);
+]], new \Rxnet\Serializer\Serialize());
+// Wait for rabbit to be connected
 \Rxnet\await($rabbit->connect());
 
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
 $exchange = $rabbit->exchange('amq.direct');
 
-// Basic sonsume
+// Will wait for message
 $queue->consume()
     ->subscribeCallback(function (RabbitMessage $message) use ($debug, $rabbit) {
         echo '.';

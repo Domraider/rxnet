@@ -1,7 +1,7 @@
 <?php
 namespace Rxnet\Dns;
 
-use \InvalidAttributesException;
+use EventLoop\EventLoop;
 use LibDNS\Decoder\DecoderFactory;
 use LibDNS\Encoder\EncoderFactory;
 use LibDNS\Messages\MessageFactory;
@@ -20,6 +20,16 @@ use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
 use Underscore\Types\Arrays;
 
+/**
+ * Class Dns
+ * @package Rxnet\Dns
+ * @method Observable a($domain, $ns =null)
+ * @method Observable aaaa($domain, $ns =null)
+ * @method Observable cname($domain, $ns =null)
+ * @method Observable mx($domain, $ns =null)
+ * @method Observable ns($domain, $ns =null)
+ * @method Observable soa($domain, $ns =null)
+ */
 class Dns extends Subject
 {
     use NotifyObserverTrait;
@@ -32,14 +42,14 @@ class Dns extends Subject
     protected $observable;
     protected $cache = [];
 
-    public function __construct(Udp $connector, EndlessSubject $subject)
+    public function __construct(Udp $connector = null, EndlessSubject $subject = null)
     {
-        $this->connector = $connector;
+        $this->connector =($connector) ?: new Udp(EventLoop::getLoop());
+        $this->observable = ($subject) ? : new EndlessSubject();
         $this->decoder = (new DecoderFactory())->create();
         $this->question = new QuestionFactory();
         $this->message = new MessageFactory();
         $this->encoder = (new EncoderFactory())->create();
-        $this->observable = $subject;
         $this->cache = [];
     }
 
@@ -50,7 +60,7 @@ class Dns extends Subject
             "A" => 1, "AAAA" => 28, "AFSDB" => 18, "CAA" => 257, "CERT" => 37, "CNAME" => 5, "DHCID" => 49, "DLV" => 32769, "DNAME" => 39, "DNSKEY" => 48, "DS" => 43, "HINFO" => 13, "KEY" => 25, "KX" => 36, "ISDN" => 20, "LOC" => 29, "MB" => 7, "MD" => 3, "MF" => 4, "MG" => 8, "MINFO" => 14, "MR" => 9, "MX" => 15, "NAPTR" => 35, "NS" => 2, "NULL" => 10, "PTR" => 12, "RP" => 17, "RT" => 21, "SIG" => 24, "SOA" => 6, "SPF" => 99, "SRV" => 33, "TXT" => 16, "WKS" => 11, "X25" => 19
         ];
         if (!$code = Arrays::get($types, $type)) {
-            throw new InvalidAttributesException("No DNS type exists for {$type}");
+            throw new \InvalidArgumentException("No DNS type exists for {$type}");
         }
         return $code;
     }
@@ -66,16 +76,16 @@ class Dns extends Subject
             return Observable::just($host);
         }
         // Caching
-        if(array_key_exists($host, $this->cache)) {
+        if (array_key_exists($host, $this->cache)) {
             return Observable::just($this->cache[$host]);
         }
         return $this->lookup($host, 'A')
-            ->map(function (Event $event) use($host) {
+            ->map(function (Event $event) use ($host) {
                 $ip = Arrays::random($event->data["answers"]);
-                if(!$ip) {
+                if (!$ip) {
 
                 }
-                if(filter_var($ip, FILTER_VALIDATE_IP)) {
+                if (filter_var($ip, FILTER_VALIDATE_IP)) {
 
                 }
                 $this->cache[$host] = $ip;
@@ -143,6 +153,17 @@ class Dns extends Subject
                 $event->data = $return;
                 return $event;
             });
+    }
+    public function __call($name, $arguments)
+    {
+        $args = [
+            $arguments[0],
+            strtolower($name)
+        ];
+        if(array_key_exists(1, $arguments)) {
+            $args[] = $arguments[1];
+        }
+        return call_user_func_array([$this, 'lookup'], $args);
     }
 
     /**

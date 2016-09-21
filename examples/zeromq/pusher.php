@@ -9,10 +9,10 @@ use Rxnet\Subject\EndlessSubject;
 use Rxnet\Zmq\RxZmq;
 use Rxnet\Zmq\SocketWrapper;
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
 
 $loop = Factory::create();
-$zmq = new \Rxnet\Zmq\ZeroMQ($loop);
+$zmq = new \Rxnet\Zmq\RxZmq($loop);
 
 $server = new Server($loop);
 $endlessSubject = new EndlessSubject();
@@ -34,7 +34,7 @@ class Pusher
     /** @var Httpd  */
     protected $httpd;
 
-    public function __construct(LoopInterface $loop, \Rxnet\Zmq\ZeroMQ $zmq, Httpd $httpd)
+    public function __construct(LoopInterface $loop, \Rxnet\Zmq\RxZmq $zmq, Httpd $httpd)
     {
         $this->loop = $loop;
         $this->pusher = $zmq->push();
@@ -48,6 +48,7 @@ class Pusher
 
         echo("Will push keepalive every 5 seconds\n");
         $this->loop->addPeriodicTimer(5, [$this, 'keepAlive']);
+
 
         $this->httpd->route('POST', '/{type}', function (HttpdRequest $request, HttpdResponse $response) {
             try {
@@ -69,7 +70,7 @@ class Pusher
             $response->text("It worked\n");
         });
 
-        printf("Listen http on port 23002\n");
+        printf("You can send to puller from curl -XPOST http://127.0.0.1:23002/whatever -d'{'json':'encoded'}'\n");
         $this->httpd->listen(23002);
     }
 

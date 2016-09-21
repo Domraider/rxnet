@@ -7,7 +7,7 @@ use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Contract\EventInterface;
 use Rxnet\Contract\EventTrait;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\Serializer;
 use Underscore\Types\Arrays;
 
 class RabbitMessage extends Subject implements EventInterface

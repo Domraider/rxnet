@@ -4,6 +4,7 @@ namespace Rxnet\Redis;
 use Clue\React\Redis\Factory;
 use Clue\React\Redis\StreamingClient;
 use Clue\Redis\Protocol\Parser\ResponseParser;
+use EventLoop\EventLoop;
 use React\EventLoop\LoopInterface;
 use Rx\Observable;
 use Rx\Observable\AnonymousObservable;
@@ -130,9 +131,9 @@ class Redis extends Subject
     protected $client;
     protected $loop;
 
-    public function __construct(LoopInterface $loop)
+    public function __construct()
     {
-        $this->loop = $loop;
+        $this->loop = EventLoop::getLoop();
     }
 
     /**

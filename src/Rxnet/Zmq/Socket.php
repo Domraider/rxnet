@@ -9,7 +9,7 @@ use Rx\ObserverInterface;
 use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Zmq\Exceptions\ConnectException;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\Serializer;
 
 class Socket extends Observable
 {

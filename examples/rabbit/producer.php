@@ -15,17 +15,19 @@ $rabbit = new \Rxnet\RabbitMq\RabbitMq([[
     "vhost" => "/",
     "user" => "guest",
     "password" => "guest",
-]]);
+]], new \Rxnet\Serializer\Serialize());
 // Lazyness, wait for rabbit to connect
 \Rxnet\await($rabbit->connect());
-
-echo "We are connected\n";
 
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
 $exchange = $rabbit->exchange('amq.direct');
 
-// Create the queue
-\Rx\Observable::just(1)
+
+// Start an observable sequence
+$rabbit->connect()
+    ->doOnNext(function() {
+        echo "We are connected\n";
+    })
     ->zip([
         $queue->create($queue::DURABLE),
         $queue->bind('/routing/key', 'amq.direct'),
@@ -34,6 +36,9 @@ $exchange = $rabbit->exchange('amq.direct');
             $exchange::AUTO_DELETE
         ])
     ])
+    ->doOnNext(function() {
+        echo "Exchange, and queue are created and bounded\n";
+    })
     // Everything's done let's produce
     ->subscribeCallback(function () use ($exchange, $loop) {
         $done = 0;
@@ -47,13 +52,15 @@ $exchange = $rabbit->exchange('amq.direct');
                 return $exchange->produce($data, '/routing/key');
             })
             ->repeat($repeat)
+
             // Let's get some stats
             ->subscribeCallback(
                 function () use (&$done) {
                     $done++;
                 }, null,
                 function () use (&$done, $start, $loop) {
-                    echo "{$done} lines produced in " . (microtime(true) - $start) . "ms\n";
+
+                    echo number_format($done)." lines produced in " . (microtime(true) - $start) . "ms\n";
                     $loop->stop();
                 });
     });

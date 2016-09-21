@@ -10,7 +10,8 @@ use Rx\Observable;
 use Rx\ObserverInterface;
 use Rx\Scheduler\EventLoopScheduler;
 use Rxnet\Contract\EventInterface;
-use Rxnet\Zmq\Serializer\MsgPack;
+use Rxnet\Serializer\MsgPack;
+use Rxnet\Serializer\Serializer;
 
 class RabbitMq
 {
@@ -33,11 +34,12 @@ class RabbitMq
     /**
      * RabbitMq constructor.
      * @param $cfg
+     * @param Serializer|null $serializer
      */
-    public function __construct($cfg)
+    public function __construct($cfg, Serializer $serializer = null)
     {
         $this->loop = EventLoop::getLoop();
-        $this->serializer = new MsgPack();
+        $this->serializer = ($serializer) ? :new MsgPack();
         $this->cfg = $cfg;
     }
 

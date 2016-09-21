@@ -1,5 +1,5 @@
 <?php
-namespace Rxnet\Zmq\Serializer;
+namespace Rxnet\Serializer;
 
 class MsgPack implements Serializer
 {

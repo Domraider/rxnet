@@ -1,6 +1,7 @@
 <?php
 namespace Rxnet\Httpd;
 
+use EventLoop\EventLoop;
 use FastRoute\Dispatcher;
 use FastRoute\RouteCollector;
 use Ramsey\Uuid\Uuid;
@@ -33,15 +34,16 @@ class Httpd extends Observable
      * @var Dispatcher
      */
     public $dispatcher;
+
     /**
      * Httpd constructor.
      * @param Server $io
      * @param EndlessSubject $observable
      */
-    public function __construct(Server $io, EndlessSubject $observable)
+    public function __construct(Server $io = null, EndlessSubject $observable = null)
     {
-        $this->io = $io;
-        $this->observable = $observable;
+        $this->io = ($io) ?: new Server(EventLoop::getLoop());
+        $this->observable = ($observable) ?: new EndlessSubject();
         $this->subscribe($this->observable);
     }
 

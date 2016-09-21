@@ -7,7 +7,7 @@ use Bunny\Message;
 use Rx\Observable;
 use Rx\Routing\RoutableSubject;
 use Rxnet\Contract\EventInterface;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\Serializer;
 
 class RabbitExchange
 {
@@ -20,7 +20,7 @@ class RabbitExchange
     protected $channel;
     protected $serializer;
 
-    public function __construct(Channel $channel, Serializer $serializer, $exchange = 'amq.direct', $opts = [])
+    public function __construct(Channel $channel = null, Serializer $serializer, $exchange = 'amq.direct', $opts = [])
     {
         $this->channel = $channel;
         $this->exchange = $exchange;
