@@ -34,12 +34,17 @@ class RabbitExchange
         $params[] = in_array(self::PASSIVE, $opts);
         $params[] = in_array(self::DURABLE, $opts);
         $params[] = in_array(self::AUTO_DELETE, $opts);
-        return function () use ($params) {
-            $promise = call_user_func_array([$this->channel, 'exchangeDeclare'], $params);
-            return \Rxnet\fromPromise($promise);
-        };
-    }
+        $promise = call_user_func_array([$this->channel, 'exchangeDeclare'], $params);
+        return \Rxnet\fromPromise($promise);
 
+    }
+    /**
+     * @param Channel $channel
+     */
+    public function setChannel(Channel $channel)
+    {
+        $this->channel = $channel;
+    }
     /**
      * @param $data
      * @param $routingKey
@@ -53,33 +58,7 @@ class RabbitExchange
             $headers['delivery-mode'] = 2;
         }
 
-        $promise = $this->channel->publish($data, $headers, $this->exchange, $routingKey);
+        $promise = $this->channel->publish($this->serializer->serialize($data), $headers, $this->exchange, $routingKey);
         return \Rxnet\fromPromise($promise);
-    }
-
-    /**
-     * @param int $delivery delivery dis or ram
-     * @param int $delay in ms delay to produce this event
-     * @return \Closure will produce on event
-     */
-    public function produceEvent($delivery = self::DELIVERY_DISK, $delay = null)
-    {
-        return function (EventInterface $event) use ($delivery, $delay) {
-            $data = $event->getData();
-            $headers = $event->getLabels();
-            if($delay) {
-                $headers['x-delay'] = $delay;
-            }
-
-            return $this->produce(
-                $this->serializer->serialize($data),
-                $event->getName(),
-                $headers,
-                $delivery
-
-            )->map(function () use ($event) {
-                return $event;
-            });
-        };
     }
 }

@@ -90,7 +90,7 @@ class RabbitMq
      */
     public function queue($name, $exchange = 'amq.direct', $opts = [])
     {
-        return new RabbitQueue($this->channel, $name, $exchange, $opts);
+        return new RabbitQueue($this->channel, $this->serializer, $name, $exchange, $opts);
     }
 
     /**

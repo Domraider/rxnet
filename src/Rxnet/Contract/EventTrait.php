@@ -2,7 +2,7 @@
 namespace Rxnet\Contract;
 
 
-trait RoutableTrait
+trait EventTrait
 {
     public function setName($name) {
         $this->name = $name;

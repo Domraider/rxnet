@@ -1,20 +1,18 @@
 <?php
-
 namespace Rxnet\RabbitMq;
-
 
 use Bunny\Channel;
 use Bunny\Message;
 use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Contract\EventInterface;
-use Rxnet\Contract\RoutableTrait;
+use Rxnet\Contract\EventTrait;
 use Rxnet\Zmq\Serializer\Serializer;
 use Underscore\Types\Arrays;
 
 class RabbitMessage extends Subject implements EventInterface
 {
-    use RoutableTrait;
+    use EventTrait;
     protected $channel;
     protected $serializer;
     protected $message;
@@ -31,9 +29,8 @@ class RabbitMessage extends Subject implements EventInterface
         $this->serializer = $serializer;
 
         $this->data = $serializer->unserialize($message->content);
-
         $this->name = $message->routingKey;
-        $this->labels = $serializer->unserialize($message->headers);
+        $this->labels = $message->headers;
         $this->labels['retried'] = $message->deliveryTag;
         $this->labels['exchange'] = $message->exchange;
 
