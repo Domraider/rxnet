@@ -23,12 +23,12 @@ use Underscore\Types\Arrays;
 /**
  * Class Dns
  * @package Rxnet\Dns
- * @method Observable a($domain, $ns =null)
- * @method Observable aaaa($domain, $ns =null)
- * @method Observable cname($domain, $ns =null)
- * @method Observable mx($domain, $ns =null)
- * @method Observable ns($domain, $ns =null)
- * @method Observable soa($domain, $ns =null)
+ * @method Observable a($domain, $ns = null)
+ * @method Observable aaaa($domain, $ns = null)
+ * @method Observable cname($domain, $ns = null)
+ * @method Observable mx($domain, $ns = null)
+ * @method Observable ns($domain, $ns = null)
+ * @method Observable soa($domain, $ns = null)
  */
 class Dns extends Subject
 {
@@ -44,8 +44,8 @@ class Dns extends Subject
 
     public function __construct(Udp $connector = null, EndlessSubject $subject = null)
     {
-        $this->connector =($connector) ?: new Udp(EventLoop::getLoop());
-        $this->observable = ($subject) ? : new EndlessSubject();
+        $this->connector = ($connector) ?: new Udp(EventLoop::getLoop());
+        $this->observable = ($subject) ?: new EndlessSubject();
         $this->decoder = (new DecoderFactory())->create();
         $this->question = new QuestionFactory();
         $this->message = new MessageFactory();
@@ -83,10 +83,10 @@ class Dns extends Subject
             ->map(function (Event $event) use ($host) {
                 $ip = Arrays::random($event->data["answers"]);
                 if (!$ip) {
-
+                    throw new RemoteNotFoundException("Can't resolve {$host}");
                 }
-                if (filter_var($ip, FILTER_VALIDATE_IP)) {
-
+                if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+                    throw new RemoteNotFoundException("Resolved is not real ip");
                 }
                 $this->cache[$host] = $ip;
                 return $ip;
@@ -137,6 +137,7 @@ class Dns extends Subject
                     'authority' => [],
                     'additional' => []
                 ];
+
                 foreach ($response->getAnswerRecords() as $record) {
                     /** @var \LibDNS\Records\Resource $record */
                     $return['answers'][] = (string)$record->getData();
@@ -154,13 +155,14 @@ class Dns extends Subject
                 return $event;
             });
     }
+
     public function __call($name, $arguments)
     {
         $args = [
             $arguments[0],
             strtolower($name)
         ];
-        if(array_key_exists(1, $arguments)) {
+        if (array_key_exists(1, $arguments)) {
             $args[] = $arguments[1];
         }
         return call_user_func_array([$this, 'lookup'], $args);

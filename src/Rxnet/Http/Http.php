@@ -3,6 +3,7 @@ namespace Rxnet\Http;
 
 
 use App\Exceptions\InvalidAttributesException;
+use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use React\EventLoop\LoopInterface;
 use Rx\DisposableInterface;
@@ -47,28 +48,28 @@ class Http extends Observable
      */
     protected $dns;
 
-    public function __construct(LoopInterface $loop, EndlessSubject $observable, Dns $dns)
+    public function __construct(EndlessSubject $observable = null, Dns $dns = null)
     {
-        $this->loop = $loop;
-        $this->observable = $observable;
-        $this->subscribe($observable);
+        $this->loop = EventLoop::getLoop();
+        $this->observable = ($observable) ?: new EndlessSubject();
+        $this->subscribe($this->observable);
 
-        $this->dns = $dns;
-        $this->http = new Tcp($loop);
-        $this->https = new Tls($loop);
+        $this->dns = ($dns) ? : new Dns();
+        $this->http = new Tcp($this->loop);
+        $this->https = new Tls($this->loop);
     }
 
     /**
      * @param $name
      * @param array $args
-     * @return Observable\
-     * @throws InvalidAttributesException
+     * @return Observable
+     * @throws \InvalidArgumentException
      */
     public function __call($name, array $args = [])
     {
         $method = strtoupper($name);
         if (!in_array($method, ['GET', 'POST', 'HEAD', 'PUT', 'PATCH', 'DELETE'], true)) {
-            throw new InvalidAttributesException("Method {$name} does not exists");
+            throw new \InvalidArgumentException("Method {$name} does not exists");
         }
         array_unshift($args, $method);
         return call_user_func_array([$this, 'request'], $args);

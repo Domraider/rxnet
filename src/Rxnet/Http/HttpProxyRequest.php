@@ -61,7 +61,7 @@ class HttpProxyRequest extends Subject
 
         return $this;
     }
-
+    
     /**
      * @param StreamEvent $event
      */
