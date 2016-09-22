@@ -2,10 +2,8 @@
 namespace Rxnet\Http;
 
 
-use App\Exceptions\InvalidAttributesException;
 use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
-use React\EventLoop\LoopInterface;
 use Rx\DisposableInterface;
 use Rxnet\Dns\Dns;
 use Rx\Observable;
@@ -34,15 +32,6 @@ class Http extends Observable
      * @var EndlessSubject
      */
     protected $observable;
-
-    /**
-     * @var Tcp
-     */
-    protected $http;
-    /**
-     * @var Tls
-     */
-    protected $https;
     /**
      * @var Dns
      */
@@ -54,9 +43,7 @@ class Http extends Observable
         $this->observable = ($observable) ?: new EndlessSubject();
         $this->subscribe($this->observable);
 
-        $this->dns = ($dns) ? : new Dns();
-        $this->http = new Tcp($this->loop);
-        $this->https = new Tls($this->loop);
+        $this->dns = ($dns) ?: new Dns();
     }
 
     /**
@@ -85,24 +72,25 @@ class Http extends Observable
     {
         $headers = Arrays::get($opts, 'headers', []);
 
-        // Set content body, guzzle fix
+        // Set content body, guzzle
         if ($body = Arrays::get($opts, 'json')) {
             $body = json_encode($body);
             $headers['Content-Type'] = 'application/json';
         } elseif (!$body = Arrays::get($opts, 'body')) {
             $body = '';
         }
+        $userAgent = Arrays::get($opts, 'user-agent', 'RxnetHttp/0.1');
 
         // Create psr default request
         $request = new Request($method, $url, [], $body);
-        $request = $request->withHeader('Host', (string)$request->getUri()->getHost());
-        $request = $request->withHeader('User-Agent', 'RxHttp/0.1');
-        $request = $request->withHeader('Accept', '*/*');
+        $request = $request->withHeader('Host', (string)$request->getUri()->getHost())
+            ->withAddedHeader('User-Agent', $userAgent)
+            ->withAddedHeader('Accept', '*/*');
+
         foreach ($headers as $k => $v) {
-            $request = $request->withHeader($k, (string)$v);
+            $request = $request->withAddedHeader($k, (string)$v);
         }
         /* @var Request $request */
-        // Guzzle compatibility
         if ($query = Arrays::get($opts, 'query')) {
             $uri = $request->getUri();
             foreach ($query as $k => $v) {
@@ -114,9 +102,9 @@ class Http extends Observable
             if (is_string($proxy)) {
                 $proxy = parse_url($proxy);
             }
-            $req = $this->requestRawWithProxy($request, $proxy);
+            $req = $this->requestRawWithProxy($request, $proxy, $opts);
         } else {
-            $req = $this->requestRaw($request);
+            $req = $this->requestRaw($request, $opts);
         }
         return $req;
     }
@@ -124,9 +112,10 @@ class Http extends Observable
     /**
      * @param Request $request
      * @param $proxy
+     * @param array $opts
      * @return HttpRequest
      */
-    public function requestRawWithProxy(Request $request, $proxy)
+    public function requestRawWithProxy(Request $request, $proxy, array $opts = [])
     {
         $req = new HttpRequest($request);
 
@@ -135,11 +124,8 @@ class Http extends Observable
 
         $this->dns->resolve($proxy['host'])
             ->flatMap(
-                function ($ip) use ($proxy) {
-                    if ($proxy['scheme'] === 'https') {
-                        return $this->https->connect($ip, $proxy['port']);
-                    }
-                    return $this->http->connect($ip, $proxy['port']);
+                function ($ip) use ($proxy, $opts) {
+                    return $this->getConnector($proxy['scheme'], $opts)->connect($ip, $proxy['port']);
                 })
             ->subscribe($proxyRequest);
 
@@ -148,12 +134,12 @@ class Http extends Observable
 
     /**
      * @param Request $request
+     * @param array $opts
      * @return HttpRequest
      */
-    public function requestRaw(Request $request)
+    public function requestRaw(Request $request, array $opts = [])
     {
         $scheme = $request->getUri()->getScheme();
-        $connector = ($scheme === 'http') ? $this->http : $this->https;
         if (!$port = $request->getUri()->getPort()) {
             $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
         }
@@ -162,12 +148,28 @@ class Http extends Observable
 
         $this->dns->resolve($request->getUri()->getHost())
             ->flatMap(
-                function ($ip) use ($connector, $port) {
-                    return $connector->connect($ip, $port);
+                function ($ip) use ($scheme, $opts, $port) {
+                    return $this->getConnector($scheme, $opts)->connect($ip, $port);
                 })
             ->subscribe($req);
 
         return $req;
+    }
+
+    /**
+     * @param $scheme
+     * @param array $opts
+     * @return Tcp|Tls
+     */
+    public function getConnector($scheme, array $opts = []) {
+        if($scheme == 'http') {
+            return new Tcp($this->loop);
+        }
+        $connector = new Tls($this->loop);
+        if($sslOpts = Arrays::get($opts, 'ssl')) {
+            $connector->setSslContextParams($sslOpts);
+        }
+        return $connector;
     }
 
     /**

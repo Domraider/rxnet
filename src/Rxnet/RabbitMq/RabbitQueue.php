@@ -84,9 +84,9 @@ class RabbitQueue
         return \Rxnet\fromPromise($promise);
     }
 
-    public function setQos($prefetch)
+    public function setQos($size = 0, $count = 0)
     {
-        $promise = $this->channel->qos($prefetch);
+        $promise = $this->channel->qos($size, $count);
         return \Rxnet\fromPromise($promise);
     }
 

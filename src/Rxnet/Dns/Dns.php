@@ -85,9 +85,6 @@ class Dns extends Subject
                 if (!$ip) {
                     throw new RemoteNotFoundException("Can't resolve {$host}");
                 }
-                if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-                    throw new RemoteNotFoundException("Resolved is not real ip");
-                }
                 $this->cache[$host] = $ip;
                 return $ip;
             });

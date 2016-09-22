@@ -28,7 +28,7 @@ class Tls extends Tcp
      * @param $certificate
      * @param string $password
      */
-    public function setCertificate($certificate, $password = 'maisouestdonc4X') {
+    public function setCertificate($certificate, $password = null) {
         if (!file_exists($certificate)) {
             throw new \InvalidArgumentException("Certificate {$certificate} doesn't exist");
         }
@@ -36,6 +36,13 @@ class Tls extends Tcp
         $this->contextParams['ssl']['allow_self_signed'] = true;
         $this->contextParams['ssl']['local_cert'] = $certificate;
         $this->contextParams['ssl']['passphrase'] = $password;
+    }
+
+    /**
+     * @param $params
+     */
+    public function setSslContextParams($params) {
+        $this->contextParams['ssl'] = $params;
     }
 
     /**
