@@ -63,7 +63,9 @@ class RabbitMq
 
         return \Rxnet\fromPromise($promise)
             ->map(function (Channel $channel) {
-                return $this->channel = $channel;
+                // set a default channel
+                $this->channel = $channel;
+                return $channel;
             });
 
     }
@@ -92,21 +94,25 @@ class RabbitMq
      * @param $name
      * @param string $exchange
      * @param array $opts
+     * @param Channel|null $channel
      * @return RabbitQueue
      */
-    public function queue($name, $exchange = 'amq.direct', $opts = [])
+    public function queue($name, $exchange = 'amq.direct', $opts = [], Channel $channel = null)
     {
-        return new RabbitQueue($this->channel, $this->serializer, $name, $exchange, $opts);
+        $channel = ($channel) ? : $this->channel;
+        return new RabbitQueue($channel, $this->serializer, $name, $exchange, $opts);
     }
 
     /**
      * @param string $name
      * @param array $opts
+     * @param Channel|null $channel
      * @return RabbitExchange
      */
-    public function exchange($name = 'amq.direct', $opts = [])
+    public function exchange($name = 'amq.direct', $opts = [], Channel $channel = null)
     {
-        return new RabbitExchange($this->channel, $this->serializer, $name, $opts);
+        $channel = ($channel) ? : $this->channel;
+        return new RabbitExchange($channel, $this->serializer, $name, $opts);
     }
 
 

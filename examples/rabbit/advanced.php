@@ -1,6 +1,7 @@
 <?php
 use EventLoop\EventLoop;
 use Rx\Scheduler\EventLoopScheduler;
+use Rxnet\Event\Event;
 use Rxnet\Observer\StdOutObserver;
 use Rxnet\RabbitMq\RabbitExchange;
 use Rxnet\RabbitMq\RabbitMessage;
@@ -14,7 +15,7 @@ $scheduler = new EventLoopScheduler($loop);
 $rabbit = new \Rxnet\RabbitMq\RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', new \Rxnet\Serializer\Serialize());
 
 // Wait for rabbit to be connected before starting
-\Rxnet\await($rabbit->connect());
+\Rxnet\awaitOnce($rabbit->connect());
 
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
 $exchange = $rabbit->exchange('amq.direct');
@@ -24,14 +25,14 @@ $debug = new StdOutObserver();
 $queue->consume('consumer-2')
     ->subscribeCallback(function (RabbitMessage $subject) use ($debug) {
         // Everything that append will be to my logger
-        //$subject->subscribe($debug);
+        $subject->subscribe($debug);
         // Give 30s to handle the subject or reject it to bottom (with all its changes)
         $subject->timeout(30 * 1000)
             ->subscribeCallback(
-                 // Ignore onNext
+            // Ignore onNext
                 null,
                 // Add back to bottom onError
-                function ($e) use ( $subject) {
+                function ($e) use ($subject) {
                     echo "#";
                     $subject->rejectToBottom();
                 },
@@ -44,9 +45,9 @@ $queue->consume('consumer-2')
                 new EventLoopScheduler(EventLoop::getLoop())
             );
 
-        $subject->onNext("Notify me to your observers\n");
-        $subject->onNext("Pass me to many handlers\n");
-        $subject->onNext("Why not an EventSource ?\n");
+        // send the subject to an event dispatcher
+        $subject->onNext(new Event("I've done this"));
+        $subject->onNext(new Event("Pass me to many handlers", ['with' => 'data'], ['some'=>'labels']));
         // When an handler wants, it can complete and message will be acknowledged
         $subject->onCompleted();
         // Or throw to stop the given message and add it back to bottom

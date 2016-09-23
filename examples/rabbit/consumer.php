@@ -8,7 +8,7 @@ require __DIR__ . "/../../vendor/autoload.php";
 $loop = EventLoop::getLoop();
 $rabbit = new \Rxnet\RabbitMq\RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', new \Rxnet\Serializer\Serialize());
 // Wait for rabbit to be connected
-\Rxnet\await($rabbit->connect());
+\Rxnet\awaitOnce($rabbit->connect());
 
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
 

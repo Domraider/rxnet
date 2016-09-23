@@ -3,16 +3,16 @@ require __DIR__ . "/../../vendor/autoload.php";
 
 $loop = \EventLoop\EventLoop::getLoop();
 $rabbit = new \Rxnet\RabbitMq\RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', new \Rxnet\Serializer\Serialize());
+
+// Wait for rabbit to be up (lazy way)
+\Rxnet\awaitOnce($rabbit->connect());
+
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
 $exchange = $rabbit->exchange('amq.direct');
 
 // Start an observable sequence
-$rabbit->connect()
-    ->doOnNext(function() {
-        echo "We are connected\n";
-    })
+$queue->create($queue::DURABLE)
     ->zip([
-        $queue->create($queue::DURABLE),
         $exchange->create($exchange::TYPE_DIRECT, [
             $exchange::DURABLE,
             $exchange::AUTO_DELETE

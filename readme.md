@@ -31,7 +31,7 @@ No extra extensions are needed
 ```php
 $dns = new Dns();
 // Procedural way
-echo Rx\await($dns->resolve('www.google.fr', '8.8.4.4'));
+echo Rx\awaitOnce($dns->resolve('www.google.fr', '8.8.4.4'));
 
 // All types of queries are allowed
 $dns->soa('www.google.fr')
@@ -149,7 +149,7 @@ No extra extensions are needed
 ```php
 $rabbit = new RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', new Serialize());
 // Wait for rabbit to be connected
-\Rxnet\await($rabbit->connect());
+\Rxnet\awaitOnce($rabbit->connect());
 $queue = $rabbit->queue('test_queue', 'amq.direct', []);
 
 // Will wait for messages
@@ -198,7 +198,7 @@ $rabbit->connect()
             // Let's get some stats
             ->subscribeCallback(
                 function () use (&$done) { $done++;}, 
-                function (\Exception $e) { echo "shit appends : ".$e->getMessage();}, 
+                function (\Exception $e) { echo "shit happens : ".$e->getMessage();}, 
                 function () use (&$done, $loop) { echo number_format($done)." lines produced"; }
         	);
     });
@@ -220,7 +220,7 @@ No extra extensions are needed
 $redis = new Redis();
 
 // Wait for redis to be ready
-$redis = RxNet\await($redis->connect('redis://localhost:6379'));
+$redis = RxNet\awaitOnce($redis->connect('redis://localhost:6379'));
 
 $redis->get('key')
   ->subscribe(new StdoutObserver());
@@ -275,16 +275,17 @@ You can do `push/pull`,  `req/rep`, read [ØMQ - The Guide](http://zguide.zeromq
 
 ## Sweet
 
-### Await
+### AwaitOnce
 
-Classic procedural is always possible 
+Classic procedural is always possible  but take care of side effects 
 
 ```php
 $observable = $http->get('http://www.google.fr')
   ->timeout(1000)
   ->retry(3);
-
-# Loop continue to go forward during await
-$response = Rxnet\await($observable);
+// Loop continue to go forward during await
+$response = Rxnet\awaitOnce($observable);
+// but this echo will wait before running
+echo "1";
 ```
 

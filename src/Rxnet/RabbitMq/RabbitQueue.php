@@ -34,6 +34,7 @@ class RabbitQueue
     public function setSerializer(Serializer $serializer)
     {
         $this->serializer = $serializer;
+        return $this;
     }
 
     /**
@@ -42,6 +43,7 @@ class RabbitQueue
     public function setChannel(Channel $channel)
     {
         $this->channel = $channel;
+        return $this;
     }
 
     public function create($opts = [self::DURABLE])
@@ -84,7 +86,7 @@ class RabbitQueue
         return \Rxnet\fromPromise($promise);
     }
 
-    public function setQos($size = 0, $count = 0)
+    public function setQos($count = null, $size = null)
     {
         $promise = $this->channel->qos($size, $count);
         return \Rxnet\fromPromise($promise);

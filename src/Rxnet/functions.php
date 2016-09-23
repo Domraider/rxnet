@@ -12,6 +12,7 @@ use Rxnet\Contract\EventInterface;
  * @param Observable $observable
  * @return null
  * @throws null
+ * @deprecated use generator
  */
 function await(Observable $observable) {
     $loop = EventLoop::getLoop();
@@ -28,6 +29,35 @@ function await(Observable $observable) {
         $done = true;
     },
     new EventLoopScheduler($loop));
+
+    while(!$done) {
+        $loop->tick();
+    }
+    if($res instanceof \Exception) {
+        throw $res;
+    }
+    return $res;
+}
+/**
+ * @param Observable $observable
+ * @return null
+ * @throws null
+ */
+function awaitOnce(Observable $observable) {
+    $loop = EventLoop::getLoop();
+    $done = false;
+    $res = null;
+    $observable->subscribeCallback(function($el) use(&$done, &$res){
+
+        $res = $el;
+        $done = true;
+    },function($e) use(&$done, &$res){
+        $res = $e;
+        $done = true;
+    },function() use(&$done){
+        $done = true;
+    },
+        new EventLoopScheduler($loop));
 
     while(!$done) {
         $loop->tick();
