@@ -2,8 +2,9 @@
 namespace Rxnet\Event;
 
 use Rxnet\Contract\EventInterface;
+use Rxnet\Contract\PriorityInterface;
 
-class Event implements EventInterface
+class Event implements EventInterface, PriorityInterface
 {
     /**
      * @var string
@@ -18,17 +19,22 @@ class Event implements EventInterface
      */
     public $labels;
 
+    /** @var int */
+    protected $priority;
+
     /**
      * Event constructor.
      * @param $name
      * @param $data
      * @param array $labels
+     * @param int|null $priority
      */
-    public function __construct($name, $data = null, $labels = [])
+    public function __construct($name, $data = null, $labels = [], $priority = null)
     {
         $this->name = $name;
         $this->data = $data;
         $this->labels = $labels;
+        $this->priority = null === $priority ? self::PRIORITY_NORMAL : $priority;
     }
 
     /**
@@ -101,5 +107,13 @@ class Event implements EventInterface
     public function toArray()
     {
         return ["name" => $this->name, "labels" => $this->labels, "data" => $this->data];
+    }
+
+    /**
+     * @return int
+     */
+    public function getPriority()
+    {
+        return $this->priority;
     }
 }
