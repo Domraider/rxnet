@@ -117,7 +117,8 @@ class Http extends Observable
      */
     public function requestRawWithProxy(Request $request, $proxy, array $opts = [])
     {
-        $req = new HttpRequest($request);
+        $streamed = Arrays::get($opts, 'stream', false);
+        $req = new HttpRequest($request, $streamed);
 
         $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'));
         $proxyRequest->subscribe($req);
@@ -144,7 +145,8 @@ class Http extends Observable
             $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
         }
 
-        $req = new HttpRequest($request);
+        $streamed = Arrays::get($opts, 'stream', false);
+        $req = new HttpRequest($request, $streamed);
 
         $this->dns->resolve($request->getUri()->getHost())
             ->flatMap(
