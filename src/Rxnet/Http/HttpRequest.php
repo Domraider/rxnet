@@ -44,9 +44,11 @@ class HttpRequest extends Subject
     /**
      * HttpRequest constructor.
      * @param Request $request
+     * @param bool $streamed
      */
-    public function __construct(Request $request)
+    public function __construct(Request $request, $streamed=false)
     {
+        $this->isStreamed = $streamed;
         $body = $request->getBody()->getContents();
         if ($length = strlen($body)) {
             $request = $request->withHeader('Content-Length', $length);
