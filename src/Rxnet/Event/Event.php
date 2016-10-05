@@ -3,8 +3,9 @@ namespace Rxnet\Event;
 
 use Rxnet\Contract\EventInterface;
 use Rxnet\Contract\EventTrait;
+use Rxnet\Contract\PriorityInterface;
 
-class Event implements EventInterface
+class Event implements EventInterface, PriorityInterface
 {
     use EventTrait;
     /**
@@ -20,17 +21,22 @@ class Event implements EventInterface
      */
     public $labels;
 
+    /** @var int */
+    protected $priority;
+
     /**
      * Event constructor.
      * @param $name
      * @param $data
      * @param array $labels
+     * @param int|null $priority
      */
-    public function __construct($name, $data = null, $labels = [])
+    public function __construct($name, $data = null, $labels = [], $priority = null)
     {
         $this->name = $name;
         $this->data = $data;
         $this->labels = $labels;
+        $this->priority = null === $priority ? self::PRIORITY_NORMAL : $priority;
     }
 
     /**
@@ -70,5 +76,13 @@ class Event implements EventInterface
     public function setData($data)
     {
         $this->data = $data;
+    }
+
+    /**
+     * @return int
+     */
+    public function getPriority()
+    {
+        return $this->priority;
     }
 }
