@@ -7,8 +7,9 @@ require __DIR__ . "/../vendor/autoload.php";
 $loop = EventLoop::getLoop();
 $router = new \Rxnet\Routing\Router();
 
+// I'll get id and title as labels
 $router->route("/articles/{id}/{title}")
-    ->subscribeCallback(function(RoutableSubject $subject) use($loop) {
+    ->subscribeCallback(function (RoutableSubject $subject) use ($loop) {
         $subject->onNext("Coucou");
         $subject->onCompleted();
     });
@@ -19,19 +20,27 @@ $router->route("/articles/{id}/{title}")
     });
 */
 
-$httpd = new \Rxnet\Httpd\Httpd();
+$zmq = new \Rxnet\Zmq\RxZmq($loop);
+$dealer = $zmq->dealer("tcp://127.0.0.1:8081");
+$dealer->subscribe($router);
 
-$httpd->map(function(\Rxnet\Httpd\HttpdEvent $event) {
-    //print_r($event->getRequest()->getJson());
+$httpd = new \Rxnet\Httpd\Httpd();
+$httpd->map(
+    function (\Rxnet\Httpd\HttpdEvent $event) {
+        $response = $event->getResponse();
         $subject = new RoutableSubject($event->getRequest()->getPath(), $event->getRequest()->getJson(), $event->getLabels());
-        $subject->subscribeCallback(function($txt) use($event) {
-            $event->getResponse()->writeHead(200);
-            $event->getResponse()->write($txt);
-        }, function(\Exception $e) use($event) {
-            $event->getResponse()->sendError($e->getMessage(), $e->getCode() ?: 500);
-        }, function() use($event) {
-            $event->getResponse()->end();
-        });
+        $subject->subscribeCallback(
+            function ($txt) use ($response) {
+                $response->writeHead(200);
+                $response->write($txt);
+            },
+            function (\Exception $e) use ($response) {
+                $response->sendError($e->getMessage(), $e->getCode() ?: 500);
+            },
+            function () use ($response) {
+                $response->end();
+            }
+        );
         return $subject;
     })
     ->subscribe($router);
