@@ -1,7 +1,7 @@
 {
   "name": "domraider/rxnet",
   "description": "Rx connector for PHP",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "keywords": [
     "rabbit",
     "queue",
@@ -16,8 +16,6 @@
   ],
   "require": {
     "php": ">=5.6.0",
-    "ext-zmq": "*",
-    "ext-curl": "*",
     "reactivex/rxphp": "^1.1",
     "react/react": "^0.4.2",
     "ramsey/uuid": ">=2.8.0",
@@ -46,6 +44,9 @@
     "cloak/peridot-cloak-plugin": "^2.0",
     "holyshared/file-fixture": "^1.0",
     "symfony/console": "^3.1"
+  },
+  "suggest": {
+    "ext-zmq": "*"
   },
   "license": "MIT",
   "authors": [
