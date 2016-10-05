@@ -4,13 +4,12 @@ namespace Rxnet\Routing;
 
 use Ramsey\Uuid\Uuid;
 use Rxnet\Contract\EventInterface;
-use Rxnet\Contract\RoutableTrait;
+use Rxnet\Contract\EventTrait;
 use Rx\Subject\Subject;
-use Rxnet\Contract\EventInterface;
 
 class RoutableSubject extends Subject implements EventInterface
 {
-    use RoutableTrait;
+    use EventTrait;
     public $data;
     public $name;
     public $labels = [];
@@ -49,5 +48,24 @@ class RoutableSubject extends Subject implements EventInterface
     }
     public function getLabels() {
         return $this->labels;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function getData($key = null)
+    {
+        return $this->data;
+    }
+
+    public function setData($data)
+    {
+        $this->data = $data;
+    }
+    public function setLabels($labels)
+    {
+        $this->labels = $labels;
     }
 }

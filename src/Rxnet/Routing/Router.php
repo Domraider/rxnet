@@ -5,19 +5,17 @@ use FastRoute\BadRouteException;
 use FastRoute\DataGenerator\GroupCountBased;
 use FastRoute\RouteParser\Std;
 use Rx\Observable;
+use Rx\ObserverInterface;
 use Rx\Subject\ReplaySubject;
 use Rx\Subject\Subject;
 use Rxnet\Contract\EventInterface;
 use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
+use \Exception;
 
-class EventSource extends Subject
+class Router implements ObserverInterface
 {
     use NotifyObserverTrait;
-    /**
-     * @var RouteInterface[]|array
-     */
-    protected $routes = [];
 
     /**
      * @var \SplObjectStorage
@@ -66,6 +64,7 @@ class EventSource extends Subject
     public function onNext($value)
     {
         $uri = $value->getName();
+
         // TODO add route cache
         foreach ($this->routing as $subject) {
             /* @var ReplaySubject $subject */
@@ -88,7 +87,15 @@ class EventSource extends Subject
                 return;
             }
         }
-        throw new \Exception("not found");
+        $value->onError(new Exception("not found"));
+    }
+    public function onError(Exception $error)
+    {
+        throw $error;
+    }
+    public function onCompleted()
+    {
+        // TODO: Implement onCompleted() method.
     }
 
 
