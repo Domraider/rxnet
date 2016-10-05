@@ -2,6 +2,18 @@
   "name": "domraider/rxnet",
   "description": "Rx connector for PHP",
   "version": "0.2.1",
+  "keywords": [
+    "rabbit",
+    "queue",
+    "zmq",
+    "zeromq",
+    "redis",
+    "http",
+    "httpd",
+    "react",
+    "reactivex",
+    "rx"
+  ],
   "require": {
     "php": ">=5.6.0",
     "ext-zmq": "*",
@@ -46,7 +58,7 @@
       "email": "er@domraider.com"
     }
   ],
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "autoload": {
     "psr-0": {
       "Rxnet": "src/"
