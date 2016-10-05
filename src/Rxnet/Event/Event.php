@@ -58,24 +58,9 @@ class Event implements EventInterface, PriorityInterface
         return fnmatch($name, $this->name, FNM_CASEFOLD);
     }
 
-    public function getName()
-    {
-        return $this->name;
-    }
-
     public function getLabels()
     {
         return $this->labels;
-    }
-
-    public function getData($key = null)
-    {
-        return $this->data;
-    }
-
-    public function setData($data)
-    {
-        $this->data = $data;
     }
 
     /**
