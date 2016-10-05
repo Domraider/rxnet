@@ -2,10 +2,12 @@
 namespace Rxnet\Event;
 
 use Rxnet\Contract\EventInterface;
+use Rxnet\Contract\EventTrait;
 use Rxnet\Contract\PriorityInterface;
 
 class Event implements EventInterface, PriorityInterface
 {
+    use EventTrait;
     /**
      * @var string
      */
@@ -38,15 +40,6 @@ class Event implements EventInterface, PriorityInterface
     }
 
     /**
-     * @param $name
-     * @return bool
-     */
-    public function is($name)
-    {
-        return $this->name === $name;
-    }
-
-    /**
      * @param $prefix
      * @return bool
      */
@@ -70,43 +63,19 @@ class Event implements EventInterface, PriorityInterface
         return $this->name;
     }
 
+    public function getLabels()
+    {
+        return $this->labels;
+    }
+
     public function getData($key = null)
     {
-        if (null !== $key) {
-            return isset($this->data[$key]) ? $this->data[$key] : null;
-        }
-
         return $this->data;
     }
 
-    /**
-     * @param $key
-     * @param $value
-     * @return bool
-     */
-    public function hasLabel($key, $value = null)
+    public function setData($data)
     {
-        if(!$value) {
-            return (bool) isset($this->labels[$key]);
-        }
-        return boolval((isset($this->labels[$key]) ? $this->labels[$key] : false) === $value);
-    }
-
-    /**
-     * @param $key
-     * @return mixed
-     */
-    public function getLabel($key)
-    {
-        return isset($this->labels[$key]) ? $this->labels[$key] : null;
-    }
-
-    /**
-     * @return array
-     */
-    public function toArray()
-    {
-        return ["name" => $this->name, "labels" => $this->labels, "data" => $this->data];
+        $this->data = $data;
     }
 
     /**

@@ -10,7 +10,7 @@ use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Zmq\Exceptions\ConnectException;
 use Rxnet\Zmq\Plugins\WaitForAnswer;
-use Rxnet\Zmq\Serializer\Serializer;
+use Rxnet\Serializer\Serializer;
 
 class SocketWithReqRep extends Socket
 {
