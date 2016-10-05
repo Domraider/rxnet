@@ -70,4 +70,12 @@ class Event implements EventInterface, PriorityInterface
     {
         return $this->priority;
     }
+
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        return ["name" => $this->name, "labels" => $this->labels, "data" => $this->data];
+    }
 }
