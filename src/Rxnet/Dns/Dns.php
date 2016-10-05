@@ -8,13 +8,12 @@ use LibDNS\Messages\MessageFactory;
 use LibDNS\Messages\MessageTypes;
 use LibDNS\Records\QuestionFactory;
 use Rx\DisposableInterface;
-use Rxnet\Event\RequestEvent;
-use Rx\Exception\ExceptionWithLabels;
 use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Connector\Udp;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\Event\Event;
+use Rxnet\Exceptions\ExceptionWithLabels;
 use Rxnet\Middleware\MiddlewareInterface;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
@@ -112,7 +111,7 @@ class Dns extends Subject
         // Build DNS request
         $labels = compact('domain', 'type', 'server');
         $req = new DnsRequest($requestPacket, $labels);
-        $this->notifyNext(new RequestEvent('/dns/request', ['client' => $this, 'connector' => $this->connector, 'request' => $request], $labels));
+        $this->notifyNext(new Event('/dns/request', ['client' => $this, 'connector' => $this->connector, 'request' => $request], $labels));
 
         return $this->connector->connect($server, 53)
             ->flatMap(function (ConnectorEvent $event) use ($req) {

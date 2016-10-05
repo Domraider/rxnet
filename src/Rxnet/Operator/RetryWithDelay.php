@@ -14,9 +14,21 @@ class RetryWithDelay
         $this->max = $max;
         $this->delay = $delay;
     }
-    public function __invoke(Observable $errors)
+    public function __invoke(Observable $attempts)
     {
-        return $errors->delay($this->delay)
-            ->take($this->max);
+        return Observable::range(1, $this->max)
+            ->zip(
+                [$attempts],
+                function ($i, $e) {
+                    if ($i >= $this->max) {
+                        throw $e;
+                    }
+                    return $i;
+                }
+            )->flatMap(
+                function ($i) {
+                    return Observable::timer(1000);
+                }
+            );
     }
 }

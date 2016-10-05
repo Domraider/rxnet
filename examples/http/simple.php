@@ -17,11 +17,11 @@ $http->get("http://www.perdu.com")
 
 // Handling errors
 $http->get("http://www.thisdomaindoesnotexistforreal.com")
-    ->doOnError(function () {
-        echo "Hmm error, retry \n";
+    ->doOnError(function (\Exception $e) {
+        printf("[%s]Can't find this domain : %s\n", date('H:i:s'), $e->getMessage());
     })
     // Retry 4 times with a delay of 1000, you can do the backoff strategy you wish
     ->retryWhen(new RetryWithDelay(4, 1000))
     ->subscribeCallback(null, function (\Exception $e) {
-        echo "Can't find this domain : {$e->getMessage()}\n";
-    }, null, $scheduler);
+        printf("[%s]Definitly can't find this domain : %s\n", date('H:i:s'), $e->getMessage());
+    }, null, $scheduler);;
