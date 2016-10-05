@@ -61,6 +61,10 @@ class Event implements EventInterface
     {
         return $this->labels;
     }
+    public function setLabels($labels)
+    {
+        $this->labels = $labels;
+    }
 
     public function getData($key = null)
     {

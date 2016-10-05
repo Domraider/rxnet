@@ -16,11 +16,9 @@ $scheduler = new EventLoopScheduler($loop);
 $router = $zmq->router();
 $router->getSocket()->setSockOpt(ZMQ::SOCKOPT_ROUTER_RAW, 1);
 
-
-
 $router->bind('tcp://127.0.0.1:3000');
 
-$router->subscribeCallback(function(\Rxnet\Zmq\ZmqEvent $event) use ($router) {
+$router->subscribeCallback(function($event) use ($router) {
    if($event->getData() == '') {
       echo "Received connection\n";
       return;

@@ -2,8 +2,6 @@
 use EventLoop\EventLoop;
 use Rxnet\Httpd\HttpdRequest;
 use Rxnet\Httpd\HttpdResponse;
-use Rxnet\Observer\StdOutObserver;
-use Rxnet\RabbitMq\RabbitMessage;
 
 require __DIR__ . "/../../vendor/autoload.php";
 
