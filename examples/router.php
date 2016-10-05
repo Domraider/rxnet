@@ -27,8 +27,8 @@ $dealer->subscribe($router);
 $httpd = new \Rxnet\Httpd\Httpd();
 $httpd->map(
     function (\Rxnet\Httpd\HttpdEvent $event) {
-        $response = $event->getResponse();
         $subject = new RoutableSubject($event->getRequest()->getPath(), $event->getRequest()->getJson(), $event->getLabels());
+        $response = $event->getResponse();
         $subject->subscribeCallback(
             function ($txt) use ($response) {
                 $response->writeHead(200);
