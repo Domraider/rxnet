@@ -1,7 +1,7 @@
 {
   "name": "domraider/rxnet",
   "description": "Rx connector for PHP",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "require": {
     "php": ">=5.6.0",
     "ext-zmq": "*",
