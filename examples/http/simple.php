@@ -25,3 +25,4 @@ $http->get("http://www.thisdomaindoesnotexistforreal.com")
     ->subscribeCallback(null, function (\Exception $e) {
         printf("[%s]Definitly can't find this domain : %s\n", date('H:i:s'), $e->getMessage());
     }, null, $scheduler);;
+

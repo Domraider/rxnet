@@ -111,7 +111,6 @@ class HttpRequest extends Subject
             $this->dispose();
         }
     }
-
     /**
      * @param ConnectorEvent|StreamEvent $event
      */

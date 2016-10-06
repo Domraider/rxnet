@@ -5,6 +5,7 @@ namespace Rxnet\Http;
 use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use Rx\DisposableInterface;
+use Rx\ObserverInterface;
 use Rxnet\Dns\Dns;
 use Rx\Observable;
 use Rxnet\Connector\Tcp;
@@ -70,16 +71,16 @@ class Http extends Observable
      */
     public function request($method, $url, array $opts = [])
     {
-        $headers = Arrays::get($opts, 'headers', []);
+        $headers = @Arrays::get($opts, 'headers', []);
 
         // Set content body, guzzle
-        if ($body = Arrays::get($opts, 'json')) {
+        if ($body = @Arrays::get($opts, 'json')) {
             $body = json_encode($body);
             $headers['Content-Type'] = 'application/json';
-        } elseif (!$body = Arrays::get($opts, 'body')) {
+        } elseif (!$body = @Arrays::get($opts, 'body')) {
             $body = '';
         }
-        $userAgent = Arrays::get($opts, 'user-agent', 'RxnetHttp/0.1');
+        $userAgent = @Arrays::get($opts, 'user-agent', 'RxnetHttp/0.1');
 
         // Create psr default request
         $request = new Request($method, $url, [], $body);
@@ -91,14 +92,14 @@ class Http extends Observable
             $request = $request->withAddedHeader($k, (string)$v);
         }
         /* @var Request $request */
-        if ($query = Arrays::get($opts, 'query')) {
+        if ($query = @Arrays::get($opts, 'query')) {
             $uri = $request->getUri();
             foreach ($query as $k => $v) {
                 $uri = $uri->withQueryValue($request->getUri(), $k, $v);
             }
             $request = $request->withUri($uri);
         }
-        if ($proxy = Arrays::get($opts, 'proxy')) {
+        if ($proxy = @Arrays::get($opts, 'proxy')) {
             if (is_string($proxy)) {
                 $proxy = parse_url($proxy);
             }
@@ -113,49 +114,54 @@ class Http extends Observable
      * @param Request $request
      * @param $proxy
      * @param array $opts
-     * @return HttpRequest
+     * @return Observable\AnonymousObservable
      */
     public function requestRawWithProxy(Request $request, $proxy, array $opts = [])
     {
-        $streamed = Arrays::get($opts, 'stream', false);
-        $req = new HttpRequest($request, $streamed);
+        return Observable::create(function(ObserverInterface $observer)  use($request, $opts, $proxy) {
+            $streamed = Arrays::get($opts, 'stream', false);
+            $req = new HttpRequest($request, $streamed);
 
-        $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'));
-        $proxyRequest->subscribe($req);
+            $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'));
+            $proxyRequest->subscribe($req);
 
-        $this->dns->resolve($proxy['host'])
-            ->flatMap(
-                function ($ip) use ($proxy, $opts) {
-                    return $this->getConnector($proxy['scheme'], $opts)->connect($ip, $proxy['port']);
-                })
-            ->subscribe($proxyRequest);
+            $this->dns->resolve($proxy['host'])
+                ->flatMap(
+                    function ($ip) use ($proxy, $opts) {
+                        return $this->getConnector($proxy['scheme'], $opts)->connect($ip, $proxy['port']);
+                    })
+                ->subscribe($proxyRequest);
 
-        return $req;
+            $req->subscribe($observer);
+        });
     }
 
     /**
      * @param Request $request
      * @param array $opts
-     * @return HttpRequest
+     * @return Observable\AnonymousObservable
      */
     public function requestRaw(Request $request, array $opts = [])
     {
-        $scheme = $request->getUri()->getScheme();
-        if (!$port = $request->getUri()->getPort()) {
-            $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
-        }
+        // To retry properly this observable will be retried
+        return Observable::create(function(ObserverInterface $observer)  use($request, $opts) {
+            $scheme = $request->getUri()->getScheme();
+            if (!$port = $request->getUri()->getPort()) {
+                $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
+            }
 
-        $streamed = Arrays::get($opts, 'stream', false);
-        $req = new HttpRequest($request, $streamed);
+            $streamed = Arrays::get($opts, 'stream', false);
+            $req = new HttpRequest($request, $streamed);
 
-        $this->dns->resolve($request->getUri()->getHost())
-            ->flatMap(
-                function ($ip) use ($scheme, $opts, $port) {
-                    return $this->getConnector($scheme, $opts)->connect($ip, $port);
-                })
-            ->subscribe($req);
+            $this->dns->resolve($request->getUri()->getHost())
+                ->flatMap(
+                    function ($ip) use ($scheme, $opts, $port) {
+                        return $this->getConnector($scheme, $opts)->connect($ip, $port);
+                    })
+                ->subscribe($req);
 
-        return $req;
+            $req->subscribe($observer);
+        });
     }
 
     /**
