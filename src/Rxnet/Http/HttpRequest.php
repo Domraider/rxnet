@@ -116,7 +116,6 @@ class HttpRequest extends Subject
      */
     public function onNext($event)
     {
-        //echo '.';
         // First event we are connected
         if ($event instanceof ConnectorEvent) {
             $this->__invoke($event);
@@ -224,7 +223,7 @@ class HttpRequest extends Subject
             $data = substr($data, 0, $end);
         }
         // Search for control octets in the mess (yes some are messy)
-        preg_match_all('/^([ABCDEF0123456789]{1,4})\r\n|\r\n([ABCDEF0123456789]{1,4})\r\n/i', $data, $matches);
+        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $data, $matches);
 
         // No chunk limiters it's an incomplete one
         if (!$end && !$matches[0]) {
