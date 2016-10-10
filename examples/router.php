@@ -14,23 +14,21 @@ $router->route("/articles/{id}/{title}")
         $subject->onCompleted();
     });
 
-/*$router->route('/articles/{id:\d+}')
-    ->subscribeCallback(function() {
-        //var_dump(func_get_args());
-    });
-*/
-
 $zmq = new \Rxnet\Zmq\RxZmq($loop);
 $dealer = $zmq->dealer("tcp://127.0.0.1:8081");
+// ZMQ no response is needed here
 $dealer->subscribe($router);
 
 $httpd = new \Rxnet\Httpd\Httpd();
+// TODO : Add another endpoint to listen ?
 $httpd->map(
     function (\Rxnet\Httpd\HttpdEvent $event) {
+        // This can become generic if needed
         $subject = new RoutableSubject($event->getRequest()->getPath(), $event->getRequest()->getJson(), $event->getLabels());
         $response = $event->getResponse();
         $subject->subscribeCallback(
             function ($txt) use ($response) {
+                // Make response stream on all steps
                 $response->writeHead(200);
                 $response->write($txt);
             },
@@ -50,6 +48,5 @@ $httpd->listen(8080);
 
 $loop->run();
 
-//$router->onNext(new \Rxnet\Event\Event("/articles/233", 'coucou'));
-
+// Replay from and auditlog or anywhere else
 //$router->onNext(new \Rxnet\Event\Event("/articles/238/superbe", 'ici'));
