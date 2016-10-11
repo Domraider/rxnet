@@ -95,7 +95,7 @@ class Http extends Observable
         if ($query = @Arrays::get($opts, 'query')) {
             $uri = $request->getUri();
             foreach ($query as $k => $v) {
-                $uri = $uri->withQueryValue($request->getUri(), $k, $v);
+                $uri = $uri->withQueryValue($uri, $k, $v);
             }
             $request = $request->withUri($uri);
         }
