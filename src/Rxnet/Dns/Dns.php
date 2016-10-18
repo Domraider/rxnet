@@ -50,6 +50,39 @@ class Dns extends Subject
         $this->message = new MessageFactory();
         $this->encoder = (new EncoderFactory())->create();
         $this->cache = [];
+
+        $this->parseEtcHost();
+    }
+
+    protected function parseEtcHost()
+    {
+        try {
+            $data = file_get_contents('/etc/hosts');
+            $data = explode("\n", $data);
+            foreach($data as $k=>$row) {
+
+                // Remove comments
+                if(substr($row, 0, 1) === '#') {
+                    unset($data[$k]);
+                    continue;
+                }
+                // Ignore IP v6
+                if(substr($row, 0, 1) === ':') {
+                    unset($data[$k]);
+                    continue;
+                }
+                $vals = preg_split("/\s/", $row);
+
+                $ip = array_shift($vals);
+                foreach($vals as $entry) {
+                    if(!$entry) {
+                        continue;
+                    }
+                    $this->cache[$entry] = $ip;
+                }
+            }
+
+        } catch (\Exception $exception) {}
     }
 
     public function convert($type)
