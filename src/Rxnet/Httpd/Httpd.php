@@ -91,6 +91,7 @@ class Httpd extends Observable
      */
     protected function dispatch(HttpdRequest $request, HttpdResponse $response, array $labels = [])
     {
+        $labels['method'] = strtolower($request->getMethod());
         if(empty($this->routes)) {
             $request
                 ->subscribeCallback(null, null, function () use ($request, $response, $labels) {
@@ -136,8 +137,6 @@ class Httpd extends Observable
     public function listen($port, $binding = "0.0.0.0")
     {
         if (!empty($this->routes)) {
-            //return $this->error(new \InvalidArgumentException("No route defined, usage is : call ->route() before listen"));
-
             $this->dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector &$router) {
                 foreach ($this->routes as $route) {
                     call_user_func_array([$router, 'addRoute'], $route);

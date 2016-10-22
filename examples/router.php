@@ -8,12 +8,16 @@ $loop = EventLoop::getLoop();
 $router = new \Rxnet\Routing\Router();
 
 // I'll get id and title as labels
-$router->route("/articles/{id}/{title}")
+$router->route("/articles/{id}/{title}", ['method'=>'get'])
     ->subscribeCallback(function (RoutableSubject $subject) use ($loop) {
         $subject->onNext("Coucou");
         $subject->onCompleted();
     });
-
+$router->route("/articles/{id}/{title}", ['method'=>'post'])
+    ->subscribeCallback(function (RoutableSubject $subject) use ($loop) {
+        $subject->onNext("Coucou post");
+        $subject->onCompleted();
+    });
 /*$router->route('/articles/{id:\d+}')
     ->subscribeCallback(function() {
         //var_dump(func_get_args());
@@ -27,6 +31,7 @@ $dealer->subscribe($router);
 $httpd = new \Rxnet\Httpd\Httpd();
 $httpd->map(
     function (\Rxnet\Httpd\HttpdEvent $event) {
+        //gc_collect_cycles();
         $subject = new RoutableSubject($event->getRequest()->getPath(), $event->getRequest()->getJson(), $event->getLabels());
         $response = $event->getResponse();
         $subject->subscribeCallback(
