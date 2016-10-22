@@ -44,9 +44,11 @@ class HttpRequest extends Subject
     /**
      * HttpRequest constructor.
      * @param Request $request
+     * @param bool $streamed
      */
-    public function __construct(Request $request)
+    public function __construct(Request $request, $streamed=false)
     {
+        $this->isStreamed = $streamed;
         $body = $request->getBody()->getContents();
         if ($length = strlen($body)) {
             $request = $request->withHeader('Content-Length', $length);
@@ -109,7 +111,6 @@ class HttpRequest extends Subject
             $this->dispose();
         }
     }
-
     /**
      * @param ConnectorEvent|StreamEvent $event
      */
@@ -222,7 +223,7 @@ class HttpRequest extends Subject
             $data = substr($data, 0, $end);
         }
         // Search for control octets in the mess (yes some are messy)
-        preg_match_all('/^([ABCDEF0123456789]{1,4})\r\n|\r\n([ABCDEF0123456789]{1,4})\r\n/i', $data, $matches);
+        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $data, $matches);
 
         // No chunk limiters it's an incomplete one
         if (!$end && !$matches[0]) {

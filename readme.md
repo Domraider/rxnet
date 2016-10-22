@@ -12,6 +12,9 @@ RxNet is an effort to bring it battery included.
 * [ZeroMq](#ZeroMq)
 * Others outside
   * [voryx/pg-async](https://github.com/voryx/PgAsync) postgres client
+  * [RxPHP/RxStream](https://github.com/RxPHP/RxStream) stream
+  * [RxPHP/RxWebsocket](https://github.com/RxPHP/RxWebsocket) websocket client / server
+  * [RxPHP/RxChildProcess](https://github.com/RxPHP/RxChildProcess) forking
 
 Thanks to [react/react](https://github.com/reactphp/react), its marvelous reactor pattern and all work done with it, many are just simple wrappers.
 
@@ -287,3 +290,17 @@ $response = Rxnet\awaitOnce($observable);
 echo "1";
 ```
 
+### Await
+Using [rx/await](https://packagist.org/packages/rx/await) you can transform you observable to a generator 
+
+```php
+$source = \Rx\Observable::interval(1000)
+    ->take(5); //Limit items to 5
+
+$generator = \Rx\await($source);
+
+foreach ($generator as $item) {
+    echo $item, PHP_EOL;
+}
+echo "DONE";
+```

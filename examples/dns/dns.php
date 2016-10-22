@@ -10,6 +10,9 @@ require __DIR__ . "/../../vendor/autoload.php";
 $loop = EventLoop::getLoop();
 $dns = new \Rxnet\Dns\Dns();
 
+$a = \Rxnet\awaitOnce($dns->resolve("localhost"));
+var_dump($a);
+
 $a = \Rxnet\awaitOnce($dns->resolve("test.fr"));
 var_dump($a);
 
