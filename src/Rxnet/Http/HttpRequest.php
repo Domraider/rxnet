@@ -115,7 +115,6 @@ class HttpRequest extends Subject
      */
     public function onNext($event)
     {
-        //echo '.';
         // First event we are connected
         if ($event instanceof ConnectorEvent) {
             $this->__invoke($event);

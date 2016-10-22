@@ -10,8 +10,17 @@ $router = new \Rxnet\Routing\Router();
 // I'll get id and title as labels
 $router->route("/articles/{id}/{title}", ['method'=>'get'])
     ->subscribeCallback(function (RoutableSubject $subject) use ($loop) {
-        $subject->onNext("Coucou");
-        $subject->onCompleted();
+        $i = 0;
+        $loop->addPeriodicTimer(1, function(\React\EventLoop\Timer\Timer $timer) use(&$i, $subject) {
+            $i++;
+            echo ".";
+            $subject->onNext("Coucou {$i}");
+            if($i == 5 ) {
+                echo "#";
+                $timer->cancel();
+                $subject->onCompleted();
+            }
+        });
     });
 $router->route("/articles/{id}/{title}", ['method'=>'post'])
     ->subscribeCallback(function (RoutableSubject $subject) use ($loop) {
@@ -29,25 +38,7 @@ $dealer = $zmq->dealer("tcp://127.0.0.1:8081");
 $dealer->subscribe($router);
 
 $httpd = new \Rxnet\Httpd\Httpd();
-$httpd->map(
-    function (\Rxnet\Httpd\HttpdEvent $event) {
-        //gc_collect_cycles();
-        $subject = new RoutableSubject($event->getRequest()->getPath(), $event->getRequest()->getJson(), $event->getLabels());
-        $response = $event->getResponse();
-        $subject->subscribeCallback(
-            function ($txt) use ($response) {
-                $response->writeHead(200);
-                $response->write($txt);
-            },
-            function (\Exception $e) use ($response) {
-                $response->sendError($e->getMessage(), $e->getCode() ?: 500);
-            },
-            function () use ($response) {
-                $response->end();
-            }
-        );
-        return $subject;
-    })
+$httpd->map(new \Rxnet\Httpd\Strategies\StreamingResponseRouting())
     ->subscribe($router);
 
 $httpd->listen(8080);
