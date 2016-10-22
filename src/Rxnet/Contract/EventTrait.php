@@ -2,6 +2,8 @@
 namespace Rxnet\Contract;
 
 
+use Underscore\Types\Arrays;
+
 trait EventTrait
 {
     public function setName($name) {
@@ -58,6 +60,24 @@ trait EventTrait
             return $this->labels;
         }
         return isset($this->labels[$key]) ? $this->labels[$key] : null;
+    }
+
+    public function getData($key = null)
+    {
+        if (null !== $key) {
+            return Arrays::get($this->data, $key);
+        }
+        return $this->data;
+    }
+
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    public function setData($data)
+    {
+        $this->data = $data;
     }
 
 }
