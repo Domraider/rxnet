@@ -85,21 +85,19 @@ $opts = [
     'Authorization' => 'Basic '.base64_encode('user:password')
   ], 
   // see http://php.net/manual/en/context.ssl.php
-  // Add whatever option you want
+  // Add whatever option you want on your https query
   'ssl' => [
     'verify_peer' => false
   ]
 ];
 
-$http->post('http://adwords.google.com/my-10gb.xml', $opts)
+$http->post('https://adwords.google.com/my-10gb.xml', $opts)
   ->subscribeCallback(function($chunk) {
-    // let's give it to expat while it arrive
+    // let's give it to expat while it arrives
   });
 ```
 
 ### TODO
-
- [ ] SSL configuration
 
  [ ] Psr7 request/response
 

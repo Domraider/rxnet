@@ -100,7 +100,7 @@ class HttpdResponse extends Observable
         }
 
         $headers = array_merge(
-            array('X-Powered-By' => 'React/alpha'),
+            array('X-Powered-By' => 'Rxnet/alpha'),
             $headers
         );
         if ($this->chunkedEncoding) {

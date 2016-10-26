@@ -62,6 +62,10 @@ class Event implements EventInterface, PriorityInterface
     {
         return $this->labels;
     }
+    public function setLabels($labels)
+    {
+        $this->labels = $labels;
+    }
 
     /**
      * @return int

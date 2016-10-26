@@ -91,6 +91,15 @@ class Httpd extends Observable
      */
     protected function dispatch(HttpdRequest $request, HttpdResponse $response, array $labels = [])
     {
+        $labels['method'] = strtolower($request->getMethod());
+        if(empty($this->routes)) {
+            $request
+                ->subscribeCallback(null, null, function () use ($request, $response, $labels) {
+                    $this->notifyNext(new HttpdEvent("/httpd/request", ['request' => $request, 'response' => $response], $labels));
+                });
+
+            return;
+        }
         $info = $this->dispatcher->dispatch($request->getMethod(), $request->getPath());
 
         switch ($info[0]) {
@@ -127,14 +136,13 @@ class Httpd extends Observable
      */
     public function listen($port, $binding = "0.0.0.0")
     {
-        if (empty($this->routes)) {
-            return $this->error(new \InvalidArgumentException("No route defined, usage is : call ->route() before listen"));
+        if (!empty($this->routes)) {
+            $this->dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector &$router) {
+                foreach ($this->routes as $route) {
+                    call_user_func_array([$router, 'addRoute'], $route);
+                }
+            });
         }
-        $this->dispatcher = \FastRoute\simpleDispatcher(function (RouteCollector &$router) {
-            foreach ($this->routes as $route) {
-                call_user_func_array([$router, 'addRoute'], $route);
-            }
-        });
         $this->io->on('connection', function (ConnectionInterface $conn) {
             $this->onConnection($conn);
         });
