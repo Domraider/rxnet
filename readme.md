@@ -118,7 +118,7 @@ $httpd->route('GET', '/', function(HttpdRequest $request, HttpdResponse $respons
 });
 $httpd->route('POST', '/{var}', function(HttpdRequest $request, HttpdResponse $response) {
   $var = $request->getRouteParam('var');
-  $response->json(['var'=>$var];
+  $response->json(['var'=>$var]);
 });
 $httpd->listen(8080);
 ```
