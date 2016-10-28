@@ -221,7 +221,7 @@ No extra extensions are needed
 $redis = new Redis();
 
 // Wait for redis to be ready
-$redis = RxNet\awaitOnce($redis->connect('redis://localhost:6379'));
+$redis = RxNet\awaitOnce($redis->connect('127.0.0.1:6379'));
 
 $redis->get('key')
   ->subscribe(new StdoutObserver());
