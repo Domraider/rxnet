@@ -274,6 +274,17 @@ You can do `push/pull`,  `req/rep`, read [ØMQ - The Guide](http://zguide.zeromq
 
  [ ] pub/sub
 
+## InfluxDB
+
+InfluxDB client based on [influxdata/influxdb-php](https://github.com/influxdata/influxdb-php)
+It only supports UDP protocol for the moment (write only).
+Our primary goal was to have a non blocking client to send metrics.
+
+```php
+
+```
+
+
 ## Sweet
 
 ### AwaitOnce
@@ -304,3 +315,5 @@ foreach ($generator as $item) {
 }
 echo "DONE";
 ```
+
+

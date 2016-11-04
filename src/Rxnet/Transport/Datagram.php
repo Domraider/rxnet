@@ -38,18 +38,22 @@ class Datagram extends Observable
     /**
      * @param $data
      * @param null $remoteAddress
+     * @param bool $waitForResponse
      * @return Observable
      */
-    public function write($data, $remoteAddress = null)
+    public function write($data, $remoteAddress = null, $waitForResponse = true)
     {
         $buffer = new Buffer($this->socket, $this->loop, $data, $remoteAddress);
 
-        $buffer->subscribeCallback(null, [$this, "close"], function() {
-            $this->loop->addReadStream($this->socket, array($this, 'read'));
+        $buffer->subscribeCallback(null, [$this, "close"], function() use ($waitForResponse) {
+            if ($waitForResponse) {
+                $this->loop->addReadStream($this->socket, array($this, 'read'));
+            } else {
+                $this->notifyCompleted();
+            }
         });
         return $buffer;
     }
-
 
     public function read()
     {
@@ -81,9 +85,9 @@ class Datagram extends Observable
         if ($this->socket !== false) {
             return stream_socket_get_name($this->socket, true);
         }
-
         return null;
     }
+
     /**
      *
      */

@@ -14,7 +14,7 @@ class Udp extends Connector
     protected $protocol = "udp";
 
     /**
-     * @return resource
+     * @return Observable
      */
     protected function createSocketForAddress()
     {
