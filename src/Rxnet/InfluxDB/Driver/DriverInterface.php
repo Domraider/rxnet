@@ -4,6 +4,7 @@
  */
 
 namespace Rxnet\InfluxDB\Driver;
+use Rx\Observable;
 
 /**
  * Interface DriverInterface
@@ -40,7 +41,7 @@ interface DriverInterface
      *
      * @param $data
      *
-     * @return mixed
+     * @return Observable
      */
     public function write($data = null);
 

@@ -4,6 +4,7 @@ namespace Rxnet\InfluxDB;
 
 use Exception;
 use InvalidArgumentException;
+use Rx\Observable;
 use Rxnet\InfluxDB\Exception as InfluxDBException;
 
 /**
@@ -72,7 +73,7 @@ class Database
      *                                       not set, the default retention period will be used. This is only
      *                                       applicable for the Guzzle driver. The UDP driver utilizes the endpoint
      *                                       configuration defined in the server's influxdb configuration file.
-     * @return bool
+     * @return Observable
      * @throws \Rxnet\InfluxDB\Exception
      */
     public function writePoints(array $points, $precision = self::PRECISION_NANOSECONDS, $retentionPolicy = null)
@@ -101,7 +102,7 @@ class Database
      *                                         not set, the default retention period will be used. This is only
      *                                         applicable for the Guzzle driver. The UDP driver utilizes the endpoint
      *                                         configuration defined in the server's influxdb configuration file.
-     * @return bool
+     * @return Observable
      * @throws \Rxnet\InfluxDB\Exception
      */
     public function writePayload($payload, $precision = self::PRECISION_NANOSECONDS, $retentionPolicy = null)

@@ -2,6 +2,7 @@
 
 namespace Rxnet\InfluxDB;
 
+use Rx\Observable;
 use Rxnet\InfluxDB\Client\Exception as ClientException;
 use Rxnet\InfluxDB\Driver\DriverInterface;
 use Rxnet\InfluxDB\Driver\UDP;
@@ -51,7 +52,7 @@ class Client
      * @param array        $parameters
      * @param string|array $payload     InfluxDB payload (Or array of payloads) that conform to the Line syntax.
      *
-     * @return bool
+     * @return Observable
      */
     public function write(array $parameters, $payload)
     {
