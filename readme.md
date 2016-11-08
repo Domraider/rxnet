@@ -10,6 +10,7 @@ RxNet is an effort to bring it battery included.
 * [RabbitMq](#rabbitmq)
 * [Redis](#redis)
 * [ZeroMq](#zeromq)
+* [InfluxDB](#influxdb)
 * Others outside
   * [voryx/pg-async](https://github.com/voryx/PgAsync) postgres client
   * [RxPHP/RxStream](https://github.com/RxPHP/RxStream) stream
@@ -279,10 +280,6 @@ You can do `push/pull`,  `req/rep`, read [ØMQ - The Guide](http://zguide.zeromq
 InfluxDB client based on [influxdata/influxdb-php](https://github.com/influxdata/influxdb-php)
 It only supports UDP protocol for the moment (write only).
 Our primary goal was to have a non blocking client to send metrics.
-
-```php
-
-```
 
 
 ## Sweet
