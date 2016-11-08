@@ -4,8 +4,10 @@
  */
 
 namespace Rxnet\InfluxDB\Driver;
+
 use EventLoop\EventLoop;
 use Rx\Scheduler\EventLoopScheduler;
+use Rxnet\Dns\Dns;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\Transport\Datagram;
 
@@ -39,11 +41,17 @@ class UDP implements DriverInterface
     protected $connector;
 
     /**
+     * @var Dns
+     */
+    protected $dns;
+
+    /**
      * @param string $host IP/hostname of the InfluxDB host
-     * @param int    $port Port of the InfluxDB process
+     * @param int $port Port of the InfluxDB process
      */
     public function __construct($host, $port)
     {
+        $this->dns = new Dns();
         $this->connector = new \Rxnet\Connector\Udp(EventLoop::getLoop());
         $this->host = $host;
         $this->port = $port;
@@ -72,8 +80,11 @@ class UDP implements DriverInterface
     {
         $req = new UDPRequest($data, [], true);
 
-        return $this->connector->connect($this->host, $this->port)
-            ->flatMap(function(ConnectorEvent $event) use ($req) {
+        return $this->dns->resolve($this->host)
+            ->flatMap(function ($ip) {
+                return $this->connector->connect($ip, $this->port);
+            })
+            ->flatMap(function (ConnectorEvent $event) use ($req) {
                 /** @var Datagram $stream */
                 $stream = $event->getStream();
                 $stream->subscribe($req);
