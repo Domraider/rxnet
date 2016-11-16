@@ -250,7 +250,10 @@ class HttpRequest extends Subject
                 $this->needMoreBytes = $chunkLength - $chunkRealLength;
                 $this->incompleteChunk .= $chunk;
                 //echo "  chunk is incomplete we need to read {$this->needMoreBytes} more octets\n";
-                continue;
+
+                if (!$end) {
+                    continue;
+                }
             }
             // Chunk is perfect add it to buffer
             $this->chunkCompleted($chunk);
