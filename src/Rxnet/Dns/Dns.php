@@ -112,13 +112,18 @@ class Dns extends Subject
             return Observable::just($this->cache[$host]);
         }
         return $this->lookup($host, 'A')
-            ->map(function (Event $event) use ($host) {
+            ->flatMap(function (Event $event) use ($host) {
                 $ip = Arrays::random($event->data["answers"]);
                 if (!$ip) {
                     throw new RemoteNotFoundException("Can't resolve {$host}");
                 }
+
+                if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+                    return $this->resolve($ip);
+                }
+
                 $this->cache[$host] = $ip;
-                return $ip;
+                return Observable::just($ip);
             });
     }
 
