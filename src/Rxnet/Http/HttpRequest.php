@@ -10,6 +10,7 @@ use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Stream\StreamEvent;
+use Rxnet\Transport\BufferedStream;
 use Rxnet\Transport\Stream;
 use Underscore\Types\Arrays;
 
@@ -83,7 +84,8 @@ class HttpRequest extends Subject
      */
     public function __invoke(ConnectorEvent $event)
     {
-        $this->stream = $event->getStream();
+        $stream = $event->getStream();
+        $this->stream = new BufferedStream($stream->getSocket(), $stream->getLoop());
         $this->stream->subscribe($this);
         $this->stream->write($this->data);
 
