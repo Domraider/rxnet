@@ -3,13 +3,10 @@ namespace Rxnet\RabbitMq;
 
 use Bunny\Async\Client;
 use Bunny\Channel;
-use Bunny\Message;
 use EventLoop\EventLoop;
 use React\EventLoop\LoopInterface;
 use Rx\Observable;
 use Rx\ObserverInterface;
-use Rx\Scheduler\EventLoopScheduler;
-use Rxnet\Contract\EventInterface;
 use Rxnet\Serializer\MsgPack;
 use Rxnet\Serializer\Serializer;
 
@@ -30,6 +27,8 @@ class RabbitMq
     protected $cfg;
     /** @var MsgPack */
     protected $serializer;
+    /* @var \SplQueue */
+    protected $buffer;
 
     /**
      * RabbitMq constructor.
@@ -38,9 +37,10 @@ class RabbitMq
      */
     public function __construct($cfg, Serializer $serializer = null)
     {
+        $this->buffer = new \SplQueue();
         $this->loop = EventLoop::getLoop();
-        $this->serializer = ($serializer) ? :new MsgPack();
-        if(is_string($cfg)) {
+        $this->serializer = ($serializer) ?: new MsgPack();
+        if (is_string($cfg)) {
             $cfg = parse_url($cfg);
             $cfg['vhost'] = $cfg['path'];
         }
@@ -53,15 +53,12 @@ class RabbitMq
      */
     public function connect()
     {
-
         $this->bunny = new Client($this->loop, $this->cfg);
 
-        $promise = $this->bunny->connect()
-            ->then(function (Client $c) {
-                return $c->channel();
-            });
-
-        return \Rxnet\fromPromise($promise)
+        return $this->bunny->connect()
+            ->flatMap(function () {
+                return $this->channel();
+            })
             ->map(function (Channel $channel) {
                 // set a default channel
                 $this->channel = $channel;
@@ -70,6 +67,7 @@ class RabbitMq
 
     }
 
+
     /**
      * Open a new channel and attribute it to given queues or exchanges
      * @param RabbitQueue[]|RabbitExchange[] $bind
@@ -77,12 +75,14 @@ class RabbitMq
      */
     public function channel($bind = [])
     {
-        if(!is_array($bind)) {
+        if (!is_array($bind)) {
             $bind = func_get_args();
         }
-        $promise = $this->bunny->channel();
-        return \Rxnet\fromPromise($promise)
-            ->map(function(Channel $channel) use ($bind){
+        return $this->bunny->connect()
+            ->flatMap(function () {
+                return $this->bunny->channel();
+            })
+            ->map(function (Channel $channel) use ($bind) {
                 foreach ($bind as $obj) {
                     $obj->setChannel($channel);
                 }
@@ -91,16 +91,74 @@ class RabbitMq
     }
 
     /**
-     * @param $name
+     * @param string $queue name of the queue
+     * @param int|null $prefetchCount
+     * @param int|null $prefetchSize
+     * @param string $consumerId
+     * @param array $opts
+     * @return Observable\AnonymousObservable
+     */
+    public function consume($queue, $prefetchCount = null, $prefetchSize = null, $consumerId = null, $opts = [])
+    {
+        return $this->channel()
+            ->doOnNext(function (Channel $channel) use ($prefetchCount, $prefetchSize) {
+                $channel->qos($prefetchSize, $prefetchCount);
+            })
+            ->flatMap(
+                function (Channel $channel) use ($queue, $consumerId, $opts) {
+                    return $this->queue($channel, $opts, $channel)
+                        ->consume($consumerId);
+                }
+            );
+    }
+
+    /**
+     * One time produce on specific channel and close after
+     * @param $data
+     * @param array $headers
      * @param string $exchange
+     * @param $routingKey
+     * @return Observable\AnonymousObservable
+     */
+    public function produce($data, $headers = [], $exchange = '', $routingKey)
+    {
+        // le produce doit dépendre du dépilage de la file d'attente pour le next
+        // mais le dépilage lui  doit continuer à se faire même s'il n'y a pas de produce
+        // en cas d'erreur je dois pouvoir récuperer le buffer pour tout autre usage
+
+        return Observable::start(
+            function () use ($exchange, $data, $headers, $routingKey) {
+                //echo "queue.";
+                $produce = Observable::create(function (ObserverInterface $observer) use ($exchange, $data, $headers, $routingKey) {
+                    return $this->channel()
+                        ->flatMap(
+                            function (Channel $channel) use ($exchange, $data, $headers, $routingKey) {
+                                return $this->exchange($exchange, [], $channel)
+                                    ->produce($data, $routingKey, $headers)
+                                    ->doOnNext(function () use ($channel) {
+                                        $channel->close();
+                                    });
+                            }
+                        )->subscribe($observer);
+                });
+                $this->buffer->push($produce);
+            })
+            ->flatMapTo($this->channel())
+            ->flatMapTo(\Rxnet\fromQueue($this->buffer))
+            ->concatAll();
+    }
+
+
+    /**
+     * @param $name
      * @param array $opts
      * @param Channel|null $channel
      * @return RabbitQueue
      */
-    public function queue($name, $exchange = 'amq.direct', $opts = [], Channel $channel = null)
+    public function queue($name, $opts = [], Channel $channel = null)
     {
-        $channel = ($channel) ? : $this->channel;
-        return new RabbitQueue($channel, $this->serializer, $name, $exchange, $opts);
+        $channel = ($channel) ?: $this->channel;
+        return new RabbitQueue($channel, $this->serializer, $name, $opts);
     }
 
     /**
@@ -111,7 +169,7 @@ class RabbitMq
      */
     public function exchange($name = 'amq.direct', $opts = [], Channel $channel = null)
     {
-        $channel = ($channel) ? : $this->channel;
+        $channel = ($channel) ?: $this->channel;
         return new RabbitExchange($channel, $this->serializer, $name, $opts);
     }
 

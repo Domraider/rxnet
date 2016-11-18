@@ -14,7 +14,7 @@ $influx = Client::fromDSN($dsn);
 
 $points = [new Point(
     'temperature',
-    42,
+    24,
     [
         'city' => 'Clermont-Ferrand',
         'country' => 'FR',
