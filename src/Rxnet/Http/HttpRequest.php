@@ -100,7 +100,9 @@ class HttpRequest extends Subject
         }
         if ($socket = $this->stream->getSocket()) {
             EventLoop::getLoop()->removeReadStream($socket);
-            @fclose($socket);
+            if (is_resource($socket)) {
+                @fclose($socket);
+            }
         }
 
         parent::dispose();
