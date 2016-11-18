@@ -28,6 +28,7 @@ class BufferedStream extends Stream
     public function readSocket($stream)
     {
         $read = true;
+        $close = false;
         while ($read) {
             $data = fread($stream, $this->bufferSize);
             if ($data === false || strlen($data) === 0) {
@@ -38,10 +39,12 @@ class BufferedStream extends Stream
             }
             if (!is_resource($stream) || feof($stream)) {
                 $read = false;
-                $this->close();
             }
         }
         $this->processReadBuffer();
+        if ($close) {
+            $this->close();
+        }
     }
 
     /**
