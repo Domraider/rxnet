@@ -74,7 +74,7 @@ class Http extends Observable
         $headers = @Arrays::get($opts, 'headers', []);
 
         // Set content body, guzzle
-        if ($body = @Arrays::get($opts, 'json')) {
+        if (null !== $body = @Arrays::get($opts, 'json')) {
             $body = json_encode($body);
             $headers['Content-Type'] = 'application/json';
         } elseif (!$body = @Arrays::get($opts, 'body')) {
