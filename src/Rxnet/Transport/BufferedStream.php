@@ -39,6 +39,7 @@ class BufferedStream extends Stream
             }
             if (!is_resource($stream) || feof($stream)) {
                 $read = false;
+                $close = true;
             }
         }
         $this->processReadBuffer();
