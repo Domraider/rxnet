@@ -1,7 +1,7 @@
 {
   "name": "domraider/rxnet",
   "description": "Rx connector for PHP",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "keywords": [
     "rabbit",
     "queue",
