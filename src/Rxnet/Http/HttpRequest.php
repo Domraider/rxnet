@@ -10,6 +10,7 @@ use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Stream\StreamEvent;
+use Rxnet\Transport\BufferedStream;
 use Rxnet\Transport\Stream;
 use Underscore\Types\Arrays;
 
@@ -83,7 +84,8 @@ class HttpRequest extends Subject
      */
     public function __invoke(ConnectorEvent $event)
     {
-        $this->stream = $event->getStream();
+        $stream = $event->getStream();
+        $this->stream = new BufferedStream($stream->getSocket(), $stream->getLoop());
         $this->stream->subscribe($this);
         $this->stream->write($this->data);
 
@@ -98,7 +100,9 @@ class HttpRequest extends Subject
         }
         if ($socket = $this->stream->getSocket()) {
             EventLoop::getLoop()->removeReadStream($socket);
-            @fclose($socket);
+            if (is_resource($socket)) {
+                @fclose($socket);
+            }
         }
 
         parent::dispose();
@@ -250,7 +254,10 @@ class HttpRequest extends Subject
                 $this->needMoreBytes = $chunkLength - $chunkRealLength;
                 $this->incompleteChunk .= $chunk;
                 //echo "  chunk is incomplete we need to read {$this->needMoreBytes} more octets\n";
-                continue;
+
+                if (!$end) {
+                    continue;
+                }
             }
             // Chunk is perfect add it to buffer
             $this->chunkCompleted($chunk);
