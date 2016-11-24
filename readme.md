@@ -325,4 +325,23 @@ foreach ($generator as $item) {
 echo "DONE";
 ```
 
+### On demand
 
+```php
+// Great to read gigabytes without memory leaks
+$reader = new \Rxnet\OnDemand\OnDemandFileReader("./test.csv");
+$reader->getObservable()
+    ->subscribeCallback(
+        function ($row) use ($reader) {
+            echo "got row : {$row}\n";
+            // read next octet
+            $reader->produceNext();
+        },
+        null,
+        function() {
+            echo "------------------\n";
+            echo "read completed\n";
+        }
+    );
+$reader->produceNext(1);
+```

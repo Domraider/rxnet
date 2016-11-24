@@ -1,6 +1,12 @@
 <?php
 namespace Rxnet\OnDemand;
 
+use EventLoop\EventLoop;
+use Rx\Scheduler\EventLoopScheduler;
+use Rx\Scheduler\VirtualTimeScheduler;
+use Rx\Subject\ReplaySubject;
+use Rx\Subject\Subject;
+
 class OnDemandIterator implements OnDemandInterface
 {
     /**
@@ -9,7 +15,7 @@ class OnDemandIterator implements OnDemandInterface
     protected $iterator;
 
     /**
-     * @var OnDemandObservable
+     * @var Subject
      */
     protected $obs;
 
@@ -18,10 +24,12 @@ class OnDemandIterator implements OnDemandInterface
      */
     protected $completed;
 
-    public function __construct(\Iterator $iterator)
+    public function __construct(\Iterator $iterator, ReplaySubject $replaySubject = null, VirtualTimeScheduler $scheduler = null)
     {
         $this->iterator = $iterator;
-        $this->obs = new OnDemandObservable();
+        $scheduler = ($scheduler) ?: new EventLoopScheduler(EventLoop::getLoop());
+        $this->obs = ($replaySubject) ?: new ReplaySubject(null, null, $scheduler);
+
         $this->completed = false;
     }
 
@@ -35,14 +43,13 @@ class OnDemandIterator implements OnDemandInterface
             return;
         }
 
-        for ($i = 0; $i < $count; $i++)
-        {
+        for ($i = 0; $i < $count; $i++) {
             if (!$this->isIteratorValid()) {
                 $this->completed = true;
-                $this->obs->notifyCompleted();
+                $this->obs->onCompleted();
                 return;
             }
-            $this->obs->notifyNext($this->iterator->current());
+            $this->obs->onNext($this->iterator->current());
             $this->iterator->next();
         }
     }
@@ -53,6 +60,7 @@ class OnDemandIterator implements OnDemandInterface
     public function getObservable()
     {
         return $this->obs;
+
     }
 
     /**
