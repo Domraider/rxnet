@@ -152,10 +152,9 @@ No extra extensions are needed
 $rabbit = new RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', new Serialize());
 // Wait for rabbit to be connected
 \Rxnet\awaitOnce($rabbit->connect());
-$queue = $rabbit->queue('test_queue', 'amq.direct', []);
 
 // Will wait for messages
-$queue->consume()
+$rabbit->consume()
     ->subscribeCallback(function (RabbitMessage $message) use ($debug, $rabbit) {
         echo '.';
         $data = $message->getData();
@@ -172,7 +171,7 @@ $queue->consume()
 ### Produce
 
 ```php
-$queue = $rabbit->queue('test_queue', 'amq.direct', []);
+$queue = $rabbit->queue('test_queue', []);
 $exchange = $rabbit->exchange('amq.direct');
 
 $rabbit->connect()

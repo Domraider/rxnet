@@ -9,48 +9,25 @@ describe("ReactiveX Bunny client", function () {
             'port' => 5672,
             'user' => 'guest',
             'password' => 'guest',
-            'heartbeat' => 6,
-            'timeout' => 2.0
         ]);
 
-        $mq->connect()
+        $cnx = $mq->connect()
             ->retryWhen(function ($errors) {
                 return $errors->delay(2000)
                     ->doOnNext(function () {
                         echo "Disconnected, retry\n";
                     });
-            })
-            ->subscribeCallback(function () {
-                echo "connected\n";
-            }, null, null, new \Rx\Scheduler\EventLoopScheduler($loop));
+            });
 
+        \Rxnet\await($cnx);
 
-        \Rx\Observable::interval(100)
-            ->takeWhile(function ($i) {
-                return $i < 300;
-            })
-            ->doOnNext(function () {
-                echo ".";
-            })
-            ->concat($mq->produce('test', [], 'amq.direct', 'test'))
-            /*
-            ->flatMap(function (\Bunny\Channel $channel) use ($mq) {
-
-                return $mq->exchange('amq.direct', [], $channel)->produce('test','test');
-            })*/
-            ->retryWhen(function ($errors) {
-                // infinite retry
-                return $errors->delay(2000)
-                    ->doOnNext(function () {
-                        echo 'produce error, wait for connection to be up.\n';
-                    });
-            })
-            ->subscribeCallback(
-                function () {
-                    echo "#";
-                }, null, null,
-                new \Rx\Scheduler\EventLoopScheduler($loop)
-            );
+        $mq->consume("test", 2)
+            ->delay(1000, new \Rx\Scheduler\EventLoopScheduler($loop))
+            ->subscribeCallback(function(\Rxnet\RabbitMq\RabbitMessage $message) {
+                echo "message {$message->getData()}\n";
+                $message->ack();
+                //var_dump(func_get_args());
+            });
 
         $loop->run();
     });

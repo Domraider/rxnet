@@ -27,8 +27,6 @@ class RabbitMq
     protected $cfg;
     /** @var MsgPack */
     protected $serializer;
-    /* @var \SplQueue */
-    protected $buffer;
 
     /**
      * RabbitMq constructor.
@@ -37,7 +35,6 @@ class RabbitMq
      */
     public function __construct($cfg, Serializer $serializer = null)
     {
-        $this->buffer = new \SplQueue();
         $this->loop = EventLoop::getLoop();
         $this->serializer = ($serializer) ?: new MsgPack();
         if (is_string($cfg)) {
@@ -91,6 +88,7 @@ class RabbitMq
     }
 
     /**
+     * Consume given queue at
      * @param string $queue name of the queue
      * @param int|null $prefetchCount
      * @param int|null $prefetchSize
@@ -106,14 +104,14 @@ class RabbitMq
             })
             ->flatMap(
                 function (Channel $channel) use ($queue, $consumerId, $opts) {
-                    return $this->queue($channel, $opts, $channel)
+                    return $this->queue($queue, $opts, $channel)
                         ->consume($consumerId);
                 }
             );
     }
 
     /**
-     * One time produce on specific channel and close after
+     * One time produce on dedicated channel and close after
      * @param $data
      * @param array $headers
      * @param string $exchange
@@ -122,30 +120,18 @@ class RabbitMq
      */
     public function produce($data, $headers = [], $exchange = '', $routingKey)
     {
-        // le produce doit dépendre du dépilage de la file d'attente pour le next
-        // mais le dépilage lui  doit continuer à se faire même s'il n'y a pas de produce
-        // en cas d'erreur je dois pouvoir récuperer le buffer pour tout autre usage
-
-        return Observable::start(
-            function () use ($exchange, $data, $headers, $routingKey) {
-                //echo "queue.";
-                $produce = Observable::create(function (ObserverInterface $observer) use ($exchange, $data, $headers, $routingKey) {
-                    return $this->channel()
-                        ->flatMap(
-                            function (Channel $channel) use ($exchange, $data, $headers, $routingKey) {
-                                return $this->exchange($exchange, [], $channel)
-                                    ->produce($data, $routingKey, $headers)
-                                    ->doOnNext(function () use ($channel) {
-                                        $channel->close();
-                                    });
-                            }
-                        )->subscribe($observer);
-                });
-                $this->buffer->push($produce);
-            })
-            ->flatMapTo($this->channel())
-            ->flatMapTo(\Rxnet\fromQueue($this->buffer))
-            ->concatAll();
+        return Observable::create(function (ObserverInterface $observer) use ($exchange, $data, $headers, $routingKey) {
+            return $this->channel()
+                ->flatMap(
+                    function (Channel $channel) use ($exchange, $data, $headers, $routingKey) {
+                        return $this->exchange($exchange, [], $channel)
+                            ->produce($data, $routingKey, $headers)
+                            ->doOnNext(function () use ($channel) {
+                                $channel->close();
+                            });
+                    }
+                )->subscribe($observer);
+        });
     }
 
 

@@ -10,7 +10,7 @@ $rabbit = new \Rxnet\RabbitMq\RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', n
 // Wait for rabbit to be connected
 \Rxnet\awaitOnce($rabbit->connect());
 
-$queue = $rabbit->queue('test_queue', 'amq.direct', []);
+$queue = $rabbit->queue('test_queue', []);
 
 // Will wait for message
 $queue->consume()

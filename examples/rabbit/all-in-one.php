@@ -34,7 +34,7 @@ $exchange = $rabbit->exchange('amq.direct', [], $channel);
 
 // Open a new channel (lazy way)
 $channel = \Rxnet\awaitOnce($rabbit->channel());
-$queue = $rabbit->queue('test_queue', 'amq.direct', [], $channel);
+$queue = $rabbit->queue('test_queue', [], $channel);
 
 // Say we want to prefetch 1 message at a time
 $queue->setQos(1);
@@ -48,6 +48,10 @@ $queue->consume("Consumer-1")
     }, null, null, $scheduler);
 
 // Many consumers can live together
+$channel = \Rxnet\awaitOnce($rabbit->channel());
+$queue = $rabbit->queue('test_queue', [], $channel);
+$queue->setQos(1);
+
 $queue->consume("Consumer-2")
     ->subscribeCallback(function (RabbitMessage $message) use ($scheduler) {
         echo "- consumer 2 consumed : {$message->getData()}\n";

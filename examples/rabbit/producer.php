@@ -7,7 +7,7 @@ $rabbit = new \Rxnet\RabbitMq\RabbitMq('rabbit://guest:guest@127.0.0.1:5672/', n
 // Wait for rabbit to be up (lazy way)
 \Rxnet\awaitOnce($rabbit->connect());
 
-$queue = $rabbit->queue('test_queue', 'amq.direct', []);
+$queue = $rabbit->queue('test_queue', []);
 $exchange = $rabbit->exchange('amq.direct');
 
 // Start an observable sequence
