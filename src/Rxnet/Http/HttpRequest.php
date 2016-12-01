@@ -85,8 +85,7 @@ class HttpRequest extends Subject
      */
     public function __invoke(ConnectorEvent $event)
     {
-        $stream = $event->getStream();
-        $this->stream = new BufferedStream($stream->getSocket(), $stream->getLoop());
+        $this->stream = $event->getStream();
         $this->stream->subscribe($this);
         $this->stream->write($this->data);
 

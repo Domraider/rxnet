@@ -10,9 +10,12 @@ use Rxnet\Dns\Dns;
 use Rx\Observable;
 use Rxnet\Connector\Tcp;
 use Rxnet\Connector\Tls;
+use Rxnet\Event\ConnectorEvent;
+use Rxnet\Event\Event;
 use Rxnet\Middleware\MiddlewareInterface;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
+use Rxnet\Transport\BufferedStream;
 use Underscore\Types\Arrays;
 
 /**
@@ -128,7 +131,8 @@ class Http extends Observable
             $this->dns->resolve($proxy['host'])
                 ->flatMap(
                     function ($ip) use ($proxy, $opts) {
-                        return $this->getConnector($proxy['scheme'], $opts)->connect($ip, $proxy['port']);
+                        return $this->getConnector($proxy['scheme'], $opts)
+                            ->connect($ip, $proxy['port']);
                     })
                 ->subscribe($proxyRequest);
 
@@ -156,7 +160,17 @@ class Http extends Observable
             $this->dns->resolve($request->getUri()->getHost())
                 ->flatMap(
                     function ($ip) use ($scheme, $opts, $port) {
-                        return $this->getConnector($scheme, $opts)->connect($ip, $port);
+                        return
+                            $this->getConnector($scheme, $opts)
+                                ->connect($ip, $port)
+                                ->map(function (Event $e) {
+                                    if ($e instanceof ConnectorEvent) {
+                                        $stream = $e->data;
+                                        $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
+                                        return new ConnectorEvent($e->name, $bufferedStream, $e->labels, $e->getPriority());
+                                    }
+                                    return $e;
+                                });
                     })
                 ->subscribe($req);
 
