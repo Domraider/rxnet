@@ -350,7 +350,11 @@ $reader->produceNext(1);
 ![](bp.obp.buffer.png)
 
 ```php
-$backPressure = new \Rxnet\Operator\OnBackPressureBuffer(5);
+$backPressure = new \Rxnet\Operator\OnBackPressureBuffer(
+    5, // Buffer capacity 
+    function() {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
+    OnBackPressureBuffer::OVERFLOW_STRATEGY_ERROR // strategy on overflow
+);
 
 \Rx\Observable::interval(1000)
     ->doOnNext(function($i) {
