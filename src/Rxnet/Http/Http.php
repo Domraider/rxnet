@@ -130,8 +130,8 @@ class Http extends Observable
 
             $this->dns->resolve($proxy['host'])
                 ->flatMap(
-                    function ($ip) use ($proxy, $opts) {
-                        return $this->getConnector($proxy['scheme'], $opts)
+                    function ($ip) use ($proxy, $opts, $request) {
+                        return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
                             ->connect($ip, $proxy['port']);
                     })
                 ->subscribe($proxyRequest);
@@ -159,9 +159,9 @@ class Http extends Observable
 
             $this->dns->resolve($request->getUri()->getHost())
                 ->flatMap(
-                    function ($ip) use ($scheme, $opts, $port) {
+                    function ($ip) use ($scheme, $opts, $port, $request) {
                         return
-                            $this->getConnector($scheme, $opts)
+                            $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
                                 ->connect($ip, $port)
                                 ->map(function (Event $e) {
                                     if ($e instanceof ConnectorEvent) {
@@ -183,7 +183,7 @@ class Http extends Observable
      * @param array $opts
      * @return Tcp|Tls
      */
-    public function getConnector($scheme, array $opts = []) {
+    public function getConnector($scheme, $hostName, array $opts = []) {
         if($scheme == 'http') {
             return new Tcp($this->loop);
         }
@@ -191,6 +191,8 @@ class Http extends Observable
         if($sslOpts = Arrays::get($opts, 'ssl')) {
             $connector->setSslContextParams($sslOpts);
         }
+        $connector->setHostName($hostName);
+
         return $connector;
     }
 

@@ -73,7 +73,12 @@ class HttpProxyRequest extends Subject
         if (null == $this->filteredConnectorEvent) {
             $event = $this->connectorEvent;
             $stream = $event->getStream();
+
+            $loop = EventLoop::getLoop();
+            $loop->removeReadStream($stream->getSocket());
+
             $filterableStream = new FilterableStream($stream->getSocket(), $stream->getLoop());
+
             $filteredStream = $filterableStream
                 ->filter(function(Event $e) {
                     $res = !($e->is("/stream/data") && empty($e->data));
