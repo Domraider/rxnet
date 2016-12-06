@@ -352,7 +352,35 @@ $reader->produceNext(1);
 ```php
 $backPressure = new \Rxnet\Operator\OnBackPressureBuffer(
     5, // Buffer capacity 
-    function() {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
+    function($next, \SplQueue $queue) {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
+    OnBackPressureBuffer::OVERFLOW_STRATEGY_ERROR // strategy on overflow
+);
+
+\Rx\Observable::interval(1000)
+    ->doOnNext(function($i) {
+        echo "produce {$i} ";
+    })
+    ->lift($backPressure->operator())
+    ->flatMap(function ($i) {
+        return \Rx\Observable::just($i)
+            ->delay(3000);
+    })
+    ->doOnNext([$backPressure, 'request'])
+    ->subscribe($stdout, $scheduler);
+```
+
+### OnBackPressureBufferFile
+
+Write next on stream if consuming is slower than producing
+
+On start, read buffer's path to search for existing and un-consumed events
+
+```php
+$backPressure = new \Rxnet\Operator\OnBackPressureBufferFile(
+    './', // Folder to write files
+    new MsgPack(), // Serializer to use
+    -1, // Buffer capacity, -1 for unlimited
+    function($next, \SplQueue $queue) {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
     OnBackPressureBuffer::OVERFLOW_STRATEGY_ERROR // strategy on overflow
 );
 
