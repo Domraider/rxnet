@@ -371,7 +371,7 @@ $backPressure = new \Rxnet\Operator\OnBackPressureBuffer(
 
 ### OnBackPressureBufferFile
 
-Write next on stream if consuming is slower than producing
+if consuming is slower than producing, next element will be written to file in givent folder.
 
 On start, read buffer's path to search for existing and un-consumed events
 
