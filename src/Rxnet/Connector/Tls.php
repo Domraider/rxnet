@@ -2,8 +2,6 @@
 namespace Rxnet\Connector;
 
 use Rx\Observable;
-use Rx\ObserverInterface;
-use Rxnet\Event\Event;
 
 /**
  * TLS secured connector
@@ -43,6 +41,11 @@ class Tls extends Tcp
      */
     public function setSslContextParams($params) {
         $this->contextParams['ssl'] = $params;
+    }
+
+    public function setHostName($host)
+    {
+        $this->contextParams['ssl']['peer_name'] = $host;
     }
 
     /**
