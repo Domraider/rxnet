@@ -345,3 +345,26 @@ $reader->getObservable()
     );
 $reader->produceNext(1);
 ```
+
+### OnBackPressureBuffer
+![](bp.obp.buffer.png)
+
+```php
+$backPressure = new \Rxnet\Operator\OnBackPressureBuffer(
+    5, // Buffer capacity 
+    function() {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
+    OnBackPressureBuffer::OVERFLOW_STRATEGY_ERROR // strategy on overflow
+);
+
+\Rx\Observable::interval(1000)
+    ->doOnNext(function($i) {
+        echo "produce {$i} ";
+    })
+    ->lift($backPressure->operator())
+    ->flatMap(function ($i) {
+        return \Rx\Observable::just($i)
+            ->delay(3000);
+    })
+    ->doOnNext([$backPressure, 'request'])
+    ->subscribe($stdout, $scheduler);
+```
