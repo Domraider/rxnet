@@ -60,7 +60,7 @@ class OnBackPressureBuffer implements OperatorInterface
                         $this->pending = true;
                         return;
                     }
-                    if ($this->queue->count() > $this->capacity) {
+                    if ($this->queue->count() >= $this->capacity - 1) {
                         if($this->onOverflow) {
                             $closure = $this->onOverflow;
                             $closure($next);
