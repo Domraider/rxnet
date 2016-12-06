@@ -1,12 +1,14 @@
 <?php
 namespace Rxnet\Operator;
 
+use Ramsey\Uuid\Uuid;
 use Rx\ObservableInterface;
 use Rx\Observer\CallbackObserver;
 use Rx\ObserverInterface;
 use Rx\Operator\OperatorInterface;
 use Rx\SchedulerInterface;
 use Rx\Subject\Subject;
+use Rxnet\Serializer\Serializer;
 
 /**
  * Class OnBackPressureBuffer
@@ -14,11 +16,15 @@ use Rx\Subject\Subject;
  *
  * @package Rxnet\Operator
  */
-class OnBackPressureBuffer implements OperatorInterface
+class OnBackPressureBufferFile implements OperatorInterface
 {
     const OVERFLOW_STRATEGY_DROP_OLDEST = "drop_oldest";
     const OVERFLOW_STRATEGY_DROP_LATEST = "drop_latest";
     const OVERFLOW_STRATEGY_ERROR = "error";
+
+    const BUFFER_EMPTY = "empty";
+    const BUFFER_RESTORED = "restored";
+    const BUFFER_NEXT = "next";
     /**
      * @var Subject
      */
@@ -28,14 +34,23 @@ class OnBackPressureBuffer implements OperatorInterface
     protected $overflowStrategy;
     protected $onOverflow;
     protected $pending = false;
+    protected $path;
+    protected $serializer;
 
-    public function __construct($capacity = -1, callable $onOverflow = null, $overflowStrategy = self::OVERFLOW_STRATEGY_ERROR)
+    public function __construct($path, Serializer $serializer, $capacity = -1, callable $onOverflow = null, $overflowStrategy = self::OVERFLOW_STRATEGY_ERROR)
     {
+        if(!is_dir($path)) {
+            throw new \InvalidArgumentException("Path {$path} does not exists");
+        }
+        $this->path = $path;
+        $this->serializer = $serializer;
         $this->capacity = $capacity;
         $this->onOverflow = $onOverflow;
         $this->overflowStrategy = $overflowStrategy;
         $this->subject = new Subject();
         $this->queue = new \SplQueue();
+
+        $this->scanDir();
     }
 
 
@@ -53,17 +68,24 @@ class OnBackPressureBuffer implements OperatorInterface
         return $observable->subscribe(
             new CallbackObserver(
                 function ($next) {
-                    // Live stream no queue necessary
-                    if (!$this->pending) {
-                        $this->subject->onNext($next);
-                        // Wait for next request
-                        $this->pending = true;
+                    if($this->pending == self::BUFFER_RESTORED) {
+                        $this->push($next);
+                        $this->request();
                         return;
                     }
-                    if ($this->queue->count() > $this->capacity) {
+                    // Live stream no queue necessary
+                    if ($this->pending == self::BUFFER_EMPTY) {
+                        // Wait for next request
+                        $this->pending = self::BUFFER_NEXT;
+                        $this->subject->onNext($next);
+                        return;
+                    }
+
+                    //echo "Queue is {$this->queue->count()}/{$this->capacity}\n";
+                    if ($this->capacity != -1 && $this->queue->count() >= $this->capacity-1) {
                         if($this->onOverflow) {
                             $closure = $this->onOverflow;
-                            $closure($next);
+                            $closure($next, $this->queue);
                         }
                         switch ($this->overflowStrategy) {
                             case self::OVERFLOW_STRATEGY_DROP_LATEST:
@@ -72,19 +94,27 @@ class OnBackPressureBuffer implements OperatorInterface
                                 $this->subject->onError(new \OutOfBoundsException("Buffer is full with {$this->capacity} elements inside"));
                                 break;
                             case self::OVERFLOW_STRATEGY_DROP_OLDEST:
-                                $this->queue->pop();
+                                $file = $this->getFileName($this->queue->pop());
+                                unlink($file);
                                 break;
                         }
 
                     }
-                    // Add to queue
-                    $this->queue->push($next);
+                    $this->push($next);
+
+
                 },
                 [$this->subject, 'onError'],
                 [$this->subject, 'onCompleted']
             ),
             $scheduler
         );
+    }
+    protected function push($next) {
+        // Create file and add it to the queue
+        $fileName = Uuid::uuid1()->toString();
+        file_put_contents($this->getFileName($fileName), $this->serializer->serialize($next));
+        $this->queue->push($fileName);
     }
 
     public function operator()
@@ -99,10 +129,34 @@ class OnBackPressureBuffer implements OperatorInterface
     {
         // Queue is finished we can return to live stream
         if ($this->queue->isEmpty()) {
-            $this->pending = false;
+            $this->pending = self::BUFFER_EMPTY;
             return;
         }
         // Take element in order they have been inserted
-        $this->subject->onNext($this->queue->shift());
+        $id = $this->queue->shift();
+        $file = $this->getFileName($id);
+        $data = file_get_contents($file);
+        $data = $this->serializer->unserialize($data);
+        unlink($file);
+
+        $this->subject->onNext($data);
+    }
+
+
+    protected function getFileName($file) {
+        return sprintf("%s/%s.buf", $this->path, $file);
+    }
+
+    protected function scanDir() {
+        $files = scandir($this->path, SCANDIR_SORT_DESCENDING);
+        foreach($files as $k=>$file) {
+            if(substr($file, -4) === '.buf') {
+                $id = substr($file, 0, -4);
+                $this->queue->push($id);
+            }
+        }
+        if($this->queue->count()) {
+            $this->pending = self::BUFFER_RESTORED;
+        }
     }
 }
