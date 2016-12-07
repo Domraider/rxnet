@@ -71,9 +71,12 @@ $opts = [
   // No buffering, you will receive chunks has they arrived
   // Perfect for big files to parse or streaming json
   'stream' => true,
-  // You can use body or json, json will add the header and json_encode
+  // You can use body, json or form_params
+  // * json will add the header and json_encode
+  // * form_params will build query in body and add application/x-www-form-urlencoded header
   'body' => 'raw body for post',
   'json' => ['my'=>'parameters', 'they-will->be'=>'json'],
+  'form_param' => ['param_0'=>'value_0', 'param_1'=>'value_1'],
   // Set query string from here not the url
   'query'=> [
     'param1'=>'one'
