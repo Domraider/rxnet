@@ -80,6 +80,9 @@ class Http extends Observable
         if (null !== $body = @Arrays::get($opts, 'json')) {
             $body = json_encode($body);
             $headers['Content-Type'] = 'application/json';
+        } elseif (null !== $body = @Arrays::get($opts, 'form_params')) {
+            $body = http_build_query($body, '', '&');
+            $headers['Content-Type'] = 'application/x-www-form-urlencoded';
         } elseif (!$body = @Arrays::get($opts, 'body')) {
             $body = '';
         }
