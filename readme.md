@@ -1,5 +1,5 @@
 # RxNet
-RxPhp is a great work that brings us Reactive programming : asynchronous programming for human being.  
+[RxPhp](https://github.com/ReactiveX/RxPHP) is a great work that brings us Reactive programming : asynchronous programming for human being.  
 You can play with reactiveX on [RxMarble.com](http://rxmarbles.com/), find all the available operators on the official [Reactivex.io](http://reactivex.io/documentation/operators.html) website or read an [interesting introduction](https://gist.github.com/staltz/868e7e9bc2a7b8c1f754).
 
 RxNet is an effort to bring it battery included.
@@ -344,4 +344,55 @@ $reader->getObservable()
         }
     );
 $reader->produceNext(1);
+```
+
+### OnBackPressureBuffer
+![](bp.obp.buffer.png)
+
+```php
+$backPressure = new \Rxnet\Operator\OnBackPressureBuffer(
+    5, // Buffer capacity 
+    function($next, \SplQueue $queue) {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
+    OnBackPressureBuffer::OVERFLOW_STRATEGY_ERROR // strategy on overflow
+);
+
+\Rx\Observable::interval(1000)
+    ->doOnNext(function($i) {
+        echo "produce {$i} ";
+    })
+    ->lift($backPressure->operator())
+    ->flatMap(function ($i) {
+        return \Rx\Observable::just($i)
+            ->delay(3000);
+    })
+    ->doOnNext([$backPressure, 'request'])
+    ->subscribe($stdout, $scheduler);
+```
+
+### OnBackPressureBufferFile
+
+if consuming is slower than producing, next element will be written to file in givent folder.
+
+On start, read buffer's path to search for existing and un-consumed events
+
+```php
+$backPressure = new \Rxnet\Operator\OnBackPressureBufferFile(
+    './', // Folder to write files
+    new MsgPack(), // Serializer to use
+    -1, // Buffer capacity, -1 for unlimited
+    function($next, \SplQueue $queue) {echo "Buffer overflow";}, // Callable on buffer full (nullable) 
+    OnBackPressureBuffer::OVERFLOW_STRATEGY_ERROR // strategy on overflow
+);
+
+\Rx\Observable::interval(1000)
+    ->doOnNext(function($i) {
+        echo "produce {$i} ";
+    })
+    ->lift($backPressure->operator())
+    ->flatMap(function ($i) {
+        return \Rx\Observable::just($i)
+            ->delay(3000);
+    })
+    ->doOnNext([$backPressure, 'request'])
+    ->subscribe($stdout, $scheduler);
 ```
