@@ -32,6 +32,10 @@ class Http extends Observable
 {
     use NotifyObserverTrait;
     protected $loop;
+    protected $defaultHeaders = [
+        "User-Agent" => "RxnetHttp/0.4",
+        "Accept" => "*/*",
+    ];
     /**
      * @var EndlessSubject
      */
@@ -74,7 +78,10 @@ class Http extends Observable
      */
     public function request($method, $url, array $opts = [])
     {
-        $headers = @Arrays::get($opts, 'headers', []);
+        $headers = array_merge(
+            $this->defaultHeaders,
+            @Arrays::get($opts, 'headers', [])
+        );
 
         // Set content body, guzzle
         if (null !== $body = @Arrays::get($opts, 'json')) {
@@ -86,13 +93,10 @@ class Http extends Observable
         } elseif (!$body = @Arrays::get($opts, 'body')) {
             $body = '';
         }
-        $userAgent = @Arrays::get($opts, 'user-agent', 'RxnetHttp/0.1');
 
         // Create psr default request
         $request = new Request($method, $url, [], $body);
-        $request = $request->withHeader('Host', (string)$request->getUri()->getHost())
-            ->withAddedHeader('User-Agent', $userAgent)
-            ->withAddedHeader('Accept', '*/*');
+        $request = $request->withHeader('Host', (string)$request->getUri()->getHost());
 
         foreach ($headers as $k => $v) {
             $request = $request->withAddedHeader($k, (string)$v);

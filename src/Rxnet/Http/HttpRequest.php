@@ -1,17 +1,14 @@
 <?php
 namespace Rxnet\Http;
 
-use \Exception;
 use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
-use Rxnet\Exceptions\EmptyResponseException;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Stream\StreamEvent;
-use Rxnet\Transport\BufferedStream;
 use Rxnet\Transport\Stream;
 use Underscore\Types\Arrays;
 
@@ -135,12 +132,6 @@ class HttpRequest extends Subject
      */
     public function parseHead($data)
     {
-        if (empty($data)) {
-            $this->notifyError(new EmptyResponseException());
-            $this->dispose();
-            return;
-        }
-
         if (false !== strpos($data, "\r\n\r\n")) {
             list($headers, $bodyBuffer) = explode("\r\n\r\n", $data, 2);
 
@@ -164,7 +155,6 @@ class HttpRequest extends Subject
             }
 
             // Parse rest of body
-
             call_user_func($this->parserCallable, $bodyBuffer);
         }
     }

@@ -81,13 +81,13 @@ $opts = [
   'query'=> [
     'param1'=>'one'
   ],
-  // Specify user-agent to use
-  'user-agent' => 'SuperParser/0.1',
   // Use a proxy
   'proxy' => 'http://user:password@myproxy:8080',
   // Append extra headers
   'headers' => [
-    'Authorization' => 'Basic '.base64_encode('user:password')
+    'Authorization' => 'Basic '.base64_encode('user:password'),
+    // Specify user-agent to use
+    'User-Agent' => 'SuperParser/0.1',
   ], 
   // see http://php.net/manual/en/context.ssl.php
   // Add whatever option you want on your https query
