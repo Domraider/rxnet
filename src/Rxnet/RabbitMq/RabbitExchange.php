@@ -5,6 +5,7 @@ namespace Rxnet\RabbitMq;
 use Bunny\Channel;
 use Bunny\Message;
 use Rx\Observable;
+use Rx\ObserverInterface;
 use Rx\Routing\RoutableSubject;
 use Rxnet\Contract\EventInterface;
 use Rxnet\Serializer\Serializer;
@@ -20,6 +21,13 @@ class RabbitExchange
     protected $channel;
     protected $serializer;
 
+    /**
+     * RabbitExchange constructor.
+     * @param Channel|null $channel
+     * @param Serializer $serializer
+     * @param string $exchange
+     * @param array $opts
+     */
     public function __construct(Channel $channel = null, Serializer $serializer, $exchange = 'amq.direct', $opts = [])
     {
         $this->channel = $channel;
@@ -27,6 +35,11 @@ class RabbitExchange
         $this->serializer = $serializer;
     }
 
+    /**
+     * @param string $type
+     * @param array $opts
+     * @return Observable
+     */
     public function create($type = self::TYPE_DIRECT, $opts = [])
     {
         $params = [$this->exchange, $type];
@@ -60,5 +73,17 @@ class RabbitExchange
 
         $promise = $this->channel->publish($this->serializer->serialize($data), $headers, $this->exchange, $routingKey);
         return \Rxnet\fromPromise($promise);
+    }
+
+    /**
+     * @param $routingKey
+     * @param array $headers
+     * @param int $delivery
+     * @return \Closure
+     */
+    public function produceNext($routingKey, $headers = [], $delivery = self::DELIVERY_DISK) {
+        return function($data) use($routingKey, $headers, $delivery) {
+            return $this->produce($data, $routingKey, $headers, $delivery);
+        };
     }
 }
