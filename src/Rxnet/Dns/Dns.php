@@ -4,9 +4,11 @@ namespace Rxnet\Dns;
 use EventLoop\EventLoop;
 use LibDNS\Decoder\DecoderFactory;
 use LibDNS\Encoder\EncoderFactory;
+use LibDNS\Messages\Message;
 use LibDNS\Messages\MessageFactory;
 use LibDNS\Messages\MessageTypes;
 use LibDNS\Records\QuestionFactory;
+use LibDNS\Records\RecordCollectionFactory;
 use Rx\DisposableInterface;
 use Rx\Observable;
 use Rx\Subject\Subject;
@@ -49,6 +51,9 @@ class Dns extends Subject
         $this->question = new QuestionFactory();
         $this->message = new MessageFactory();
         $this->encoder = (new EncoderFactory())->create();
+
+        //$this->encoder->encode(new Message(new RecordCollectionFactory()));
+
         $this->cache = [];
 
         $this->parseEtcHost();
