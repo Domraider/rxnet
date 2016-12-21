@@ -3,7 +3,9 @@ namespace Rxnet\Http;
 
 
 use EventLoop\EventLoop;
+use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
 use Rx\DisposableInterface;
 use Rx\ObserverInterface;
 use Rxnet\Dns\Dns;
@@ -44,6 +46,10 @@ class Http extends Observable
      * @var Dns
      */
     protected $dns;
+    /**
+     * @var null|CookieJar[]
+     */
+    protected $cookieJar = null;
 
     public function __construct(EndlessSubject $observable = null, Dns $dns = null)
     {
@@ -68,6 +74,21 @@ class Http extends Observable
         }
         array_unshift($args, $method);
         return call_user_func_array([$this, 'request'], $args);
+    }
+
+    public function useCookies()
+    {
+        $this->cookieJar = [];
+    }
+
+    public function hasCookieJar($proxy = null)
+    {
+        return isset($this->cookieJar[$proxy ?: 'no_proxy']);
+    }
+
+    public function getCookieJar($proxy = null)
+    {
+        return $this->hasCookieJar($proxy) ? $this->cookieJar[$proxy ?: 'no_proxy'] : null;
     }
 
     /**
@@ -109,15 +130,34 @@ class Http extends Observable
             }
             $request = $request->withUri($uri);
         }
-        if ($proxy = @Arrays::get($opts, 'proxy')) {
-            if (is_string($proxy)) {
-                $proxy = parse_url($proxy);
+
+        $proxy = @Arrays::get($opts, 'proxy');
+
+        // set cookies
+        if (null !== $this->cookieJar) {
+            if (!isset($this->cookieJar[$proxy ?: 'no_proxy'])) {
+                $this->cookieJar[$proxy ?: 'no_proxy'] = new CookieJar();
             }
-            $req = $this->requestRawWithProxy($request, $proxy, $opts);
+            $request = $this->cookieJar[$proxy ?: 'no_proxy']->withCookieHeader($request);
+        }
+
+        if ($proxy) {
+            $realProxy = $proxy;
+            if (is_string($realProxy)) {
+                $realProxy = parse_url($realProxy);
+            }
+            $req = $this->requestRawWithProxy($request, $realProxy, $opts);
         } else {
             $req = $this->requestRaw($request, $opts);
         }
-        return $req;
+
+        return $req
+            ->map(function (Response $response) use ($request, $proxy) {
+                if (null !== $this->cookieJar) {
+                    $this->cookieJar[$proxy ?: 'no_proxy']->extractCookies($request, $response);
+                }
+                return $response;
+            });
     }
 
     /**
