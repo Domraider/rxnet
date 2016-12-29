@@ -66,7 +66,7 @@ class Http extends Observable
      * @return Observable
      * @throws \InvalidArgumentException
      */
-    public function __call($name, array $args = [])
+    public function __call($name, array $args)
     {
         $method = strtoupper($name);
         if (!in_array($method, ['GET', 'POST', 'HEAD', 'PUT', 'PATCH', 'DELETE'], true)) {
