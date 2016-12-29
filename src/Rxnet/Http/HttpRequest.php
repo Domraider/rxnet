@@ -219,9 +219,8 @@ class HttpRequest extends Subject
             }
         }
         // Detect if we have the http end in this data
-        if (($end = strpos($data, "0\r\n\r\n")) !== false) {
-            $data = substr($data, 0, $end);
-        }
+        $end = strpos($data, "0\r\n\r\n") !== false;
+
         // Search for control octets in the mess (yes some are messy)
         preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $data, $matches);
 

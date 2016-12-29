@@ -12,7 +12,8 @@ $http = new \Rxnet\Http\Http();
 // Simple query
 $http->get("http://www.perdu.com")
     ->subscribeCallback(function (\GuzzleHttp\Psr7\Response $response) {
-        echo "\nLost :\n" . html_entity_decode($response->getBody()) . "\n";
+        printf("Status code : %s\n", $response->getStatusCode());
+        printf("Body :\n%s\n", html_entity_decode($response->getBody()));
     });
 
 // Handling errors
