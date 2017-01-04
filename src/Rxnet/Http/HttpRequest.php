@@ -302,7 +302,6 @@ class HttpRequest extends Subject
     protected function setupTimeout()
     {
         if ($this->timeout > 0) {
-
             $this->timeoutTimer = EventLoop::getLoop()
                 ->addTimer($this->timeout, function() {
                     if (!$this->isDisposed()) {

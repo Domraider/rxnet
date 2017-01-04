@@ -168,12 +168,12 @@ class Http extends Observable
      */
     public function requestRawWithProxy(Request $request, $proxy, array $opts = [])
     {
-        $request = Observable::create(function(ObserverInterface $observer)  use($request, $opts, $proxy) {
+        return Observable::create(function(ObserverInterface $observer)  use($request, $opts, $proxy) {
             $streamed = Arrays::get($opts, 'stream', false);
-            $req = new HttpRequest($request, $streamed);
 
             $connectTimeout = Arrays::get($opts, 'connect_timeout', 0);
             $timeout = Arrays::get($opts, 'timeout', 0);
+            $req = new HttpRequest($request, $streamed, $timeout);
 
             $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'), $timeout);
             $proxyRequest->subscribe($req);
@@ -189,11 +189,6 @@ class Http extends Observable
 
             $req->subscribe($observer);
         });
-        if (isset($opts['timeout']) && $opts['timeout'] > 0) {
-            $timeout = intval($opts['timeout'] * 1000);
-            $request = $request->timeout($timeout);
-        }
-        return $request;
     }
 
     /**
