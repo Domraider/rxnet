@@ -194,7 +194,7 @@ class Dns extends Subject
             });
     }
 
-    public function __call($name, $arguments)
+    public function __call($name, array $arguments)
     {
         $args = [
             $arguments[0],
