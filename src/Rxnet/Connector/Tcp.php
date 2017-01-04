@@ -23,23 +23,6 @@ class Tcp extends Connector
         ],
     ];
 
-    /** @var TimerInterface|null $timeoutTimer */
-    protected $timeoutTimer;
-
-    public function connect($host, $port = false)
-    {
-        if ($this->connectTimeout > 0) {
-            return Observable::create(function (ObserverInterface $observer) use ($host, $port) {
-                $this->timeoutTimer = EventLoop::getLoop()
-                    ->addTimer($this->connectTimeout, function() use ($observer) {
-                        $observer->onError(new \Exception("Connect timeout"));
-                    });
-            })
-                ->merge(parent::connect($host, $port));
-        }
-        return parent::connect($host, $port);
-    }
-
     /**
      * @return Observable\AnonymousObservable
      * @throws \Exception
@@ -50,15 +33,28 @@ class Tcp extends Connector
 
         // Wait TCP handshake
         return Observable::create(function(ObserverInterface $observer) use($socket) {
-            $this->loop->addWriteStream($socket, function($socket) use($observer) {
-                $this->onConnected($socket, $observer);
-            });
-            return new CallbackDisposable(function() use($socket, $observer) {
+
+            $closeSocket = function() use($socket, $observer) {
                 $this->loop->removeStream($socket);
                 if(is_resource($socket)) {
                     fclose($socket);
                 }
+            };
+
+            $timer = EventLoop::getLoop()
+                ->addTimer($this->connectTimeout, function() use ($observer, $closeSocket) {
+                    $closeSocket();
+                    $observer->onError(new \Exception("Connect timeout"));
             });
+
+            $this->loop->addWriteStream($socket, function($socket) use($observer, $timer) {
+                if ($timer->isActive()) {
+                    $timer->cancel();
+                }
+                $this->onConnected($socket, $observer);
+            });
+
+            return new CallbackDisposable($closeSocket);
         });
     }
 
@@ -68,10 +64,6 @@ class Tcp extends Connector
      */
     public function onConnected($socket, $observer)
     {
-        if ($this->timeoutTimer instanceof TimerInterface && $this->timeoutTimer->isActive()) {
-            $this->timeoutTimer->cancel();
-            $this->timeoutTimer = null;
-        }
         $this->loop->removeWriteStream($socket);
         if (false === stream_socket_get_name($socket, true)) {
             $observer->onError(new ConnectionException('Connection refused'));
