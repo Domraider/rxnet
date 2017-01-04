@@ -183,7 +183,7 @@ class Http extends Observable
                     function ($ip) use ($proxy, $opts, $request, $connectTimeout) {
                         return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
                             ->setTimeout($connectTimeout)
-                            ->connect($ip, $proxy['port'], $connectTimeout);
+                            ->connect($ip, $proxy['port']);
                     })
                 ->subscribe($proxyRequest);
 
