@@ -41,14 +41,17 @@ class Tcp extends Connector
                 }
             };
 
-            $timer = EventLoop::getLoop()
-                ->addTimer($this->connectTimeout, function() use ($observer, $closeSocket) {
-                    $closeSocket();
-                    $observer->onError(new \Exception("Connect timeout"));
-            });
+            $timer = null;
+            if ($this->connectTimeout > 0) {
+                $timer = EventLoop::getLoop()
+                    ->addTimer($this->connectTimeout, function () use ($observer, $closeSocket) {
+                        $closeSocket();
+                        $observer->onError(new \Exception("Connect timeout"));
+                    });
+            }
 
             $this->loop->addWriteStream($socket, function($socket) use($observer, $timer) {
-                if ($timer->isActive()) {
+                if (isset($timer) && $timer->isActive()) {
                     $timer->cancel();
                 }
                 $this->onConnected($socket, $observer);
