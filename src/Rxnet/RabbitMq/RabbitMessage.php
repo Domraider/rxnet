@@ -14,7 +14,6 @@ class RabbitMessage
     protected $message;
     protected $trait;
 
-    protected $name;
     protected $routingKey;
     protected $data;
     protected $labels = [];
@@ -96,7 +95,7 @@ class RabbitMessage
     /**
      * @param $delay
      * @param string $exchange
-     * @return Observable\AnonymousObservable
+     * @return Observable
      */
     public function retryLater($delay, $exchange = 'direct.delayed')
     {
@@ -105,29 +104,32 @@ class RabbitMessage
 
         return $this->reject(false)
             ->flatMap(function () use ($headers, $exchange) {
-                return $this->channel->publish(
-                    $this->serializer->serialize($this->data),
-                    $headers,
-                    $this->getLabel('exchange'),
-                    $this->name
+                return \Rxnet\fromPromise(
+                    $this->channel->publish(
+                        $this->serializer->serialize($this->data),
+                        $headers,
+                        Arrays::get($this->labels, 'exchange'),
+                        $this->routingKey
+                    )
                 );
             });
     }
 
     /**
-     * @return Observable\AnonymousObservable
+     * @return Observable
      */
     public function rejectToBottom()
     {
         return $this->reject(false)
             ->flatMap(function () {
-                return $this->channel->publish(
-                    $this->serializer->serialize($this->data),
-                    Arrays::without($this->labels, 'retried', 'exchange'),
-                    $this->getLabel('exchange'),
-                    $this->name
+                return \Rxnet\fromPromise(
+                    $this->channel->publish(
+                        $this->serializer->serialize($this->data),
+                        Arrays::without($this->labels, 'retried', 'exchange'),
+                        Arrays::get($this->labels, 'exchange'),
+                        $this->routingKey
+                    )
                 );
             });
     }
-
 }
