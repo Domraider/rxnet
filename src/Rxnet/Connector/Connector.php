@@ -44,6 +44,7 @@ abstract class Connector extends Observable
     /**
      * Connector constructor.
      * @param LoopInterface $loop
+     * @param int $timeout
      */
     public function __construct(LoopInterface $loop)
     {
@@ -62,9 +63,10 @@ abstract class Connector extends Observable
     /**
      * @param $host
      * @param bool|false $port
+     * @param int $connectTimeout Timeout in ms
      * @return Observable|Observable\ErrorObservable
      */
-    public function connect($host, $port = false)
+    public function connect($host, $port = false, $connectTimeout = 0)
     {
         $this->host = $host;
         $this->port = $port;
@@ -139,5 +141,6 @@ abstract class Connector extends Observable
 
         return sprintf('%s://%s:%s', $protocol, $ip, $port);
     }
+
 
 }

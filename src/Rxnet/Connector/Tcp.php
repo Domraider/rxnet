@@ -1,6 +1,8 @@
 <?php
 namespace Rxnet\Connector;
 
+use EventLoop\EventLoop;
+use React\EventLoop\Timer\TimerInterface;
 use React\Socket\ConnectionException;
 use Rx\Disposable\CallbackDisposable;
 use Rx\Observable;
@@ -20,6 +22,24 @@ class Tcp extends Connector
             "verify_peer_name" => false,
         ],
     ];
+
+    /** @var TimerInterface|null $timeoutTimer */
+    protected $timeoutTimer;
+
+    public function connect($host, $port = false, $connectTimeout = 0)
+    {
+        if ($connectTimeout > 0) {
+            return Observable::create(function (ObserverInterface $observer) use ($host, $port, $connectTimeout) {
+                $this->timeoutTimer = EventLoop::getLoop()
+                    ->addTimer($connectTimeout, function() use ($observer) {
+                        $observer->onError(new \Exception("Connect timeout"));
+                    });
+            })
+                ->merge(parent::connect($host, $port, $connectTimeout));
+        }
+        return parent::connect($host, $port, $connectTimeout);
+    }
+
     /**
      * @return Observable\AnonymousObservable
      * @throws \Exception
@@ -48,6 +68,10 @@ class Tcp extends Connector
      */
     public function onConnected($socket, $observer)
     {
+        if ($this->timeoutTimer instanceof TimerInterface && $this->timeoutTimer->isActive()) {
+            $this->timeoutTimer->cancel();
+            $this->timeoutTimer = null;
+        }
         $this->loop->removeWriteStream($socket);
         if (false === stream_socket_get_name($socket, true)) {
             $observer->onError(new ConnectionException('Connection refused'));
@@ -55,7 +79,5 @@ class Tcp extends Connector
             return;
         }
         $observer->onNext(new ConnectorEvent("/connector/connected", new Stream($socket, $this->loop), $this->labels));
-        //$observer->onCompleted();
     }
-
 }
