@@ -4,6 +4,7 @@ namespace Rxnet\Http;
 use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use React\EventLoop\Timer\TimerInterface;
 use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
@@ -36,18 +37,28 @@ class HttpRequest extends Subject
     protected $stream;
 
     protected $incompleteChunk = '';
+
     protected $needMoreBytes = 0;
 
     protected $isStreamed = false;
+
+    /** @var float $timeout Timeout in seconds */
+    protected $timeout;
+
+    /** @var TimerInterface|null $timeoutTimer */
+    protected $timeoutTimer = null;
 
     /**
      * HttpRequest constructor.
      * @param Request $request
      * @param bool $streamed
+     * @param float $timeout
      */
-    public function __construct(Request $request, $streamed=false)
+    public function __construct(Request $request, $streamed=false, $timeout = 0)
     {
         $this->isStreamed = $streamed;
+        $this->timeout = $timeout;
+
         $body = $request->getBody()->getContents();
         if ($length = strlen($body)) {
             $request = $request->withHeader('Content-Length', $length);
@@ -69,7 +80,6 @@ class HttpRequest extends Subject
         } else {
             $req[] = '';
         }
-
 
         $this->data = implode("\r\n", $req);
 
@@ -120,6 +130,7 @@ class HttpRequest extends Subject
         // First event we are connected
         if ($event instanceof ConnectorEvent) {
             $this->__invoke($event);
+            $this->setupTimeout();
             return;
         }
         // It's surely a stream event with data
@@ -267,6 +278,11 @@ class HttpRequest extends Subject
      */
     public function completed()
     {
+        if ($this->timeoutTimer instanceof TimerInterface && $this->timeoutTimer->isActive()) {
+            $this->timeoutTimer->cancel();
+            $this->timeoutTimer = null;
+        }
+
         //echo '#';
         $response = new Response($this->response->getStatusCode(), $this->response->getHeaders(), $this->buffer);
         foreach ($this->observers as $observer) {
@@ -281,6 +297,19 @@ class HttpRequest extends Subject
     public function __toString()
     {
         return $this->data;
+    }
+
+    protected function setupTimeout()
+    {
+        if ($this->timeout > 0) {
+            $this->timeoutTimer = EventLoop::getLoop()
+                ->addTimer($this->timeout, function() {
+                    if (!$this->isDisposed()) {
+                        $this->onError(new \Exception("Timeout"));
+                        $this->dispose();
+                    }
+                });
+        }
     }
 
 }

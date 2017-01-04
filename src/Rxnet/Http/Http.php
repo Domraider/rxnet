@@ -170,15 +170,19 @@ class Http extends Observable
     {
         return Observable::create(function(ObserverInterface $observer)  use($request, $opts, $proxy) {
             $streamed = Arrays::get($opts, 'stream', false);
-            $req = new HttpRequest($request, $streamed);
 
-            $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'));
+            $connectTimeout = Arrays::get($opts, 'connect_timeout', 0);
+            $timeout = Arrays::get($opts, 'timeout', 0);
+            $req = new HttpRequest($request, $streamed, $timeout);
+
+            $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'), $timeout);
             $proxyRequest->subscribe($req);
 
             $this->dns->resolve($proxy['host'])
                 ->flatMap(
-                    function ($ip) use ($proxy, $opts, $request) {
+                    function ($ip) use ($proxy, $opts, $request, $connectTimeout) {
                         return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
+                            ->setTimeout($connectTimeout)
                             ->connect($ip, $proxy['port']);
                     })
                 ->subscribe($proxyRequest);
@@ -195,34 +199,37 @@ class Http extends Observable
     public function requestRaw(Request $request, array $opts = [])
     {
         // To retry properly this observable will be retried
-        return Observable::create(function(ObserverInterface $observer)  use($request, $opts) {
+        $request = Observable::create(function(ObserverInterface $observer)  use($request, $opts) {
             $scheme = $request->getUri()->getScheme();
             if (!$port = $request->getUri()->getPort()) {
                 $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
             }
 
             $streamed = Arrays::get($opts, 'stream', false);
-            $req = new HttpRequest($request, $streamed);
+            $connectTimeout = Arrays::get($opts, 'connect_timeout', 0);
+            $timeout = Arrays::get($opts, 'timeout', 0);
+            $req = new HttpRequest($request, $streamed, $timeout);
 
             $this->dns->resolve($request->getUri()->getHost())
                 ->flatMap(
-                    function ($ip) use ($scheme, $opts, $port, $request) {
-                        return
-                            $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
-                                ->connect($ip, $port)
-                                ->map(function (Event $e) {
-                                    if ($e instanceof ConnectorEvent) {
-                                        $stream = $e->data;
-                                        $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
-                                        return new ConnectorEvent($e->name, $bufferedStream, $e->labels, $e->getPriority());
-                                    }
-                                    return $e;
-                                });
+                    function ($ip) use ($scheme, $opts, $port, $request, $connectTimeout) {
+                        $connect = $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
+                            ->setTimeout($connectTimeout)
+                            ->connect($ip, $port);
+                        return $connect->map(function (Event $e) {
+                            if ($e instanceof ConnectorEvent) {
+                                $stream = $e->data;
+                                $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
+                                return new ConnectorEvent($e->name, $bufferedStream, $e->labels, $e->getPriority());
+                            }
+                            return $e;
+                        });
                     })
                 ->subscribe($req);
 
             $req->subscribe($observer);
         });
+        return $request;
     }
 
     /**
