@@ -182,6 +182,7 @@ class Http extends Observable
                 ->flatMap(
                     function ($ip) use ($proxy, $opts, $request, $connectTimeout) {
                         return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
+                            ->setTimeout($connectTimeout)
                             ->connect($ip, $proxy['port'], $connectTimeout);
                     })
                 ->subscribe($proxyRequest);
@@ -218,7 +219,8 @@ class Http extends Observable
                 ->flatMap(
                     function ($ip) use ($scheme, $opts, $port, $request, $connectTimeout) {
                         $connect = $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
-                            ->connect($ip, $port, $connectTimeout);
+                            ->setTimeout($connectTimeout)
+                            ->connect($ip, $port);
                         return $connect->map(function (Event $e) {
                             if ($e instanceof ConnectorEvent) {
                                 $stream = $e->data;

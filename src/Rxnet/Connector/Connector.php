@@ -41,6 +41,9 @@ abstract class Connector extends Observable
     protected $labels = [];
     protected $socket;
 
+    /** @var  float $connectTimeout Timeout in seconds */
+    protected $connectTimeout = 0;
+
     /**
      * Connector constructor.
      * @param LoopInterface $loop
@@ -66,7 +69,7 @@ abstract class Connector extends Observable
      * @param int $connectTimeout Timeout in ms
      * @return Observable|Observable\ErrorObservable
      */
-    public function connect($host, $port = false, $connectTimeout = 0)
+    public function connect($host, $port = false)
     {
         $this->host = $host;
         $this->port = $port;
@@ -77,6 +80,12 @@ abstract class Connector extends Observable
             //\Log::emergency("Impossible to connect : {$e->getMessage()}");
             return $this->error($e);
         }
+    }
+
+    public function setTimeout($connectTimeout)
+    {
+        $this->connectTimeout = $connectTimeout;
+        return $this;
     }
 
     /**

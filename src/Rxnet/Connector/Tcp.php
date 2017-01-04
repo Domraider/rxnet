@@ -26,18 +26,18 @@ class Tcp extends Connector
     /** @var TimerInterface|null $timeoutTimer */
     protected $timeoutTimer;
 
-    public function connect($host, $port = false, $connectTimeout = 0)
+    public function connect($host, $port = false)
     {
-        if ($connectTimeout > 0) {
-            return Observable::create(function (ObserverInterface $observer) use ($host, $port, $connectTimeout) {
+        if ($this->connectTimeout > 0) {
+            return Observable::create(function (ObserverInterface $observer) use ($host, $port) {
                 $this->timeoutTimer = EventLoop::getLoop()
-                    ->addTimer($connectTimeout, function() use ($observer) {
+                    ->addTimer($this->connectTimeout, function() use ($observer) {
                         $observer->onError(new \Exception("Connect timeout"));
                     });
             })
-                ->merge(parent::connect($host, $port, $connectTimeout));
+                ->merge(parent::connect($host, $port));
         }
-        return parent::connect($host, $port, $connectTimeout);
+        return parent::connect($host, $port);
     }
 
     /**
