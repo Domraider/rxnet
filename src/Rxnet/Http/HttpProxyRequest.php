@@ -159,10 +159,6 @@ class HttpProxyRequest extends Subject
                 // Error handler should have done the work
                 break;
             }
-            else {
-                // let's loop until handshake is ok
-                $loop->tick();
-            }
         }
         restore_error_handler();
     }
