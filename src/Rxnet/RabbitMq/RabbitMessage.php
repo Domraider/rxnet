@@ -63,6 +63,16 @@ class RabbitMessage
     }
 
     /**
+     * @param $label
+     * @param null $default
+     * @return mixed
+     */
+    public function getLabel($label, $default = null)
+    {
+        return Arrays::get($this->labels, $label, $default);
+    }
+
+    /**
      * @return Observable
      */
     public function ack()
