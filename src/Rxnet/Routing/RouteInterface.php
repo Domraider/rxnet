@@ -1,5 +1,5 @@
 <?php
-namespace Rx\Routing;
+namespace Rxnet\Routing;
 
 interface RouteInterface
 {
