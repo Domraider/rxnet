@@ -6,6 +6,7 @@ use Ramsey\Uuid\Uuid;
 use Rxnet\Contract\EventInterface;
 use Rxnet\Contract\EventTrait;
 use Rx\Subject\Subject;
+use Underscore\Types\Arrays;
 
 class RoutableSubject extends Subject implements EventInterface
 {
@@ -55,9 +56,13 @@ class RoutableSubject extends Subject implements EventInterface
         return $this->name;
     }
 
-    public function getData($key = null)
+    public function getData($key = null, $default = null)
     {
-        return $this->data;
+        if (null === $key) {
+            return $this->data;
+        }
+
+        return Arrays::get($this->data, $key, $default);
     }
 
     public function setData($data)
