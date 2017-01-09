@@ -19,6 +19,8 @@ class RabbitMessage
     public $exchange;
     /** @var string */
     public $routingKey;
+    /** @var array */
+    public $headers;
 
     protected $channel;
     protected $serializer;
@@ -28,7 +30,8 @@ class RabbitMessage
     protected $data;
     protected $labels = [];
 
-    const LABEL_TRIED = 'tried';
+    const HEADER_TRIED = 'tried';
+    const HEADER_LABELS = 'labels';
 
     /**
      * RabbitMessage constructor.
@@ -47,17 +50,32 @@ class RabbitMessage
         $this->redelivered = $message->redelivered;
         $this->exchange = $message->exchange;
         $this->routingKey = $message->routingKey;
+        $this->headers = $message->headers;
+
+        $this->headers[self::HEADER_TRIED] = isset($this->headers[self::HEADER_TRIED]) ? $this->headers[self::HEADER_TRIED]+1 : 1;
 
         $this->data = $serializer->unserialize($message->content);
-        $this->labels = $message->headers;
-        $this->labels[self::LABEL_TRIED] = isset($this->labels[self::LABEL_TRIED]) ? $this->labels[self::LABEL_TRIED]+1 : 1;
+
+        $this->labels = Arrays::get($this->headers, self::HEADER_LABELS, '[]');
+        try {
+            $this->labels = \GuzzleHttp\json_decode($this->labels, true) ?: [];
+        } catch (\InvalidArgumentException $e) {
+            $this->labels = [];
+        }
     }
 
     /**
-     * @deprecated
      * @return string
      */
     public function getRoutingKey()
+    {
+        return $this->routingKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDeliveryTag()
     {
         return $this->routingKey;
     }
@@ -71,16 +89,21 @@ class RabbitMessage
     }
 
     /**
+     * @param $header
+     * @param null $default
+     * @return mixed
+     */
+    public function getHeader($header, $default = null)
+    {
+        return Arrays::get($this->headers, $header, $default);
+    }
+
+    /**
      * @return array
      */
     public function getLabels()
     {
         return $this->labels;
-    }
-
-    public function setLabel()
-    {
-
     }
 
     /**
@@ -91,6 +114,16 @@ class RabbitMessage
     public function getLabel($label, $default = null)
     {
         return Arrays::get($this->labels, $label, $default);
+    }
+
+    /**
+     * @param $label
+     * @param $value
+     * @return mixed
+     */
+    public function setLabel($label, $value)
+    {
+        $this->labels = Arrays::set($this->labels, $label, $value);
     }
 
     /**
@@ -123,6 +156,22 @@ class RabbitMessage
         return \Rxnet\fromPromise($promise);
     }
 
+    protected function prepareHeaders($additionalHeaders = [])
+    {
+        $headers = $this->headers;
+        if (isset($headers[self::HEADER_LABELS]) ) {
+            unset($headers[self::HEADER_LABELS]);
+        }
+        if ($this->labels) {
+            $headers[self::HEADER_LABELS] = \GuzzleHttp\json_encode($this->labels);
+        }
+
+        return array_merge(
+            $headers,
+            $additionalHeaders
+        );
+    }
+
     /**
      * @param $delay
      * @param string $exchange
@@ -130,7 +179,7 @@ class RabbitMessage
      */
     public function retryLater($delay, $exchange = 'direct.delayed')
     {
-        $headers = array_merge($this->labels, ['x-delay' => $delay]);
+        $headers = $this->prepareHeaders(['x-delay' => $delay]);
 
         return $this->reject(false)
             ->flatMap(function () use ($headers, $exchange) {
@@ -155,7 +204,7 @@ class RabbitMessage
                 return \Rxnet\fromPromise(
                     $this->channel->publish(
                         $this->serializer->serialize($this->data),
-                        $this->labels,
+                        $this->prepareHeaders(),
                         $this->exchange,
                         $this->routingKey
                     )
