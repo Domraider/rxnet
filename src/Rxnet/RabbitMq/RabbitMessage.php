@@ -54,17 +54,10 @@ class RabbitMessage
     }
 
     /**
+     * @deprecated
      * @return string
      */
     public function getRoutingKey()
-    {
-        return $this->routingKey;
-    }
-
-    /**
-     * @return string
-     */
-    public function getDeliveryTag()
     {
         return $this->routingKey;
     }
