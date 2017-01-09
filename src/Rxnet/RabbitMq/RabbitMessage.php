@@ -9,14 +9,26 @@ use Underscore\Types\Arrays;
 
 class RabbitMessage
 {
+    /** @var string */
+    public $consumerTag;
+    /** @var int */
+    public $deliveryTag;
+    /** @var boolean */
+    public $redelivered;
+    /** @var string */
+    public $exchange;
+    /** @var string */
+    public $routingKey;
+
     protected $channel;
     protected $serializer;
     protected $message;
     protected $trait;
 
-    protected $routingKey;
     protected $data;
     protected $labels = [];
+
+    const LABEL_TRIED = 'tried';
 
     /**
      * RabbitMessage constructor.
@@ -30,18 +42,29 @@ class RabbitMessage
         $this->message = $message;
         $this->serializer = $serializer;
 
-        $this->data = $serializer->unserialize($message->content);
+        $this->consumerTag = $message->consumerTag;
+        $this->deliveryTag = $message->deliveryTag;
+        $this->redelivered = $message->redelivered;
+        $this->exchange = $message->exchange;
         $this->routingKey = $message->routingKey;
-        $this->labels = $message->headers;
-        $this->labels['retried'] = $message->deliveryTag;
-        $this->labels['exchange'] = $message->exchange;
 
+        $this->data = $serializer->unserialize($message->content);
+        $this->labels = $message->headers;
+        $this->labels[self::LABEL_TRIED] = isset($this->labels[self::LABEL_TRIED]) ? $this->labels[self::LABEL_TRIED]+1 : 1;
     }
 
     /**
      * @return string
      */
     public function getRoutingKey()
+    {
+        return $this->routingKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDeliveryTag()
     {
         return $this->routingKey;
     }
@@ -60,6 +83,11 @@ class RabbitMessage
     public function getLabels()
     {
         return $this->labels;
+    }
+
+    public function setLabel()
+    {
+
     }
 
     /**
@@ -109,8 +137,7 @@ class RabbitMessage
      */
     public function retryLater($delay, $exchange = 'direct.delayed')
     {
-        $headers = Arrays::without($this->labels, 'retried', 'exchange');
-        $headers = array_merge($headers, ['x-delay' => $delay]);
+        $headers = array_merge($this->labels, ['x-delay' => $delay]);
 
         return $this->reject(false)
             ->flatMap(function () use ($headers, $exchange) {
@@ -118,7 +145,7 @@ class RabbitMessage
                     $this->channel->publish(
                         $this->serializer->serialize($this->data),
                         $headers,
-                        Arrays::get($this->labels, 'exchange'),
+                        $exchange,
                         $this->routingKey
                     )
                 );
@@ -135,8 +162,8 @@ class RabbitMessage
                 return \Rxnet\fromPromise(
                     $this->channel->publish(
                         $this->serializer->serialize($this->data),
-                        Arrays::without($this->labels, 'retried', 'exchange'),
-                        Arrays::get($this->labels, 'exchange'),
+                        $this->labels,
+                        $this->exchange,
                         $this->routingKey
                     )
                 );
