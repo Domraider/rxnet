@@ -127,6 +127,14 @@ class RabbitMessage
     }
 
     /**
+     * @return string
+     */
+    public function getRawContent()
+    {
+        return $this->message->content;
+    }
+
+    /**
      * @return Observable
      */
     public function ack()
