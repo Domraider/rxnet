@@ -69,7 +69,7 @@ class Tcp extends Connector
     {
         $this->loop->removeWriteStream($socket);
         if (false === stream_socket_get_name($socket, true)) {
-            $observer->onError(new ConnectionException('Connection refused'));
+            $observer->onError(new ConnectionException(sprintf('Connection refused on %s://%s:%s', $this->protocol, $this->host, $this->port)));
             $observer->onCompleted();
             return;
         }
