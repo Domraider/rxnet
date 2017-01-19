@@ -119,6 +119,9 @@ class Dns extends Subject
         }
         return $this->lookup($host, 'A')
             ->flatMap(function (Event $event) use ($host, $maxRecursion) {
+                if (!$event->data["answers"]) {
+                    throw new RemoteNotFoundException("Can't resolve {$host}");
+                }
                 $ip = Arrays::random($event->data["answers"]);
                 if (!$ip) {
                     throw new RemoteNotFoundException("Can't resolve {$host}");
