@@ -206,6 +206,7 @@ class HttpRequest extends Subject
     {
         //echo "get Data\n----\n";
         //echo $data."\n----\n";
+        // printf("Need more bytes : %s\n", $this->needMoreBytes > 0 ? "true" : "false");
         if ($this->needMoreBytes > 0) {
             //echo "  Previous chunk was incomplete read {$this->needMoreBytes}\n";
             // Previous chunk was incomplete take on new one what's needed
@@ -230,27 +231,30 @@ class HttpRequest extends Subject
             }
         }
         // Detect if we have the http end in this data
-        $end = strpos($data, "0\r\n\r\n") !== false;
+        $end = strpos($this->incompleteChunk . $data, "0\r\n\r\n") !== false;
+        // printf("End : %s\n", $end > 0 ? "true" : "false");
+
 
         // Search for control octets in the mess (yes some are messy)
-        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $data, $matches);
+        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $this->incompleteChunk . $data, $matches);
 
         // No chunk limiters it's an incomplete one
         if (!$end && !$matches[0]) {
             $this->incompleteChunk .= $data;
             $this->needMoreBytes -= strlen($data);
+            // printf("Need more bytes (2) : %s\n", $this->needMoreBytes);
             return;
         }
 
         foreach ($matches[0] as $k => $control) {
             // Search control position with it's \r\n in string
-            $controlPos = strpos($data, $control) + strlen($control);
+            $controlPos = strpos($this->incompleteChunk . $data, $control) + strlen($control);
             // Get control hexdec
             $control = rtrim(trim($control));
             // Extract chunk length from control
             $chunkLength = hexdec($control);
             // Extract from data the chunk
-            $chunk = substr($data, $controlPos, $chunkLength);
+            $chunk = substr($this->incompleteChunk . $data, $controlPos, $chunkLength);
             $chunkRealLength = strlen($chunk);
 
             //echo "Control {$control} is at pos {$controlPos} and has {$chunkLength} data\n";
@@ -267,6 +271,10 @@ class HttpRequest extends Subject
             }
             // Chunk is perfect add it to buffer
             $this->chunkCompleted($chunk);
+            $this->incompleteChunk = substr($this->incompleteChunk . $data, $chunkLength);
+            if (false === $this->incompleteChunk) {
+                $this->incompleteChunk = '';
+            }
         }
         if ($end) {
             $this->completed();
