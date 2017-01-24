@@ -27,7 +27,7 @@ class RetryWithDelay
                 }
             )->flatMap(
                 function ($i) {
-                    return Observable::timer(1000);
+                    return Observable::timer($this->delay);
                 }
             );
     }
