@@ -57,4 +57,20 @@ class Tls extends Tcp
         return parent::createSocketForAddress();
     }
 
+    
+    /**
+     * @return string
+     */
+    public function getProtocol()
+    {
+        return $this->protocol;
+    }
+
+    /**
+     * @param string $protocol
+     */
+    public function setProtocol($protocol)
+    {
+        $this->protocol = $protocol;
+    }
 }
