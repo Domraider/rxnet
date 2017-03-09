@@ -1,0 +1,4 @@
+[rawtext.http]
+request1-packet1 = "http/requests/request1_packet1.txt"
+request1-packet2 = "http/requests/request1_packet2.txt"
+response1 = "http/requests/response1.txt"

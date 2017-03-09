@@ -1,0 +1,188 @@
+./[62.210.116.139]</extdom:destination>
+                        <e
+1c33
+xtdom:result>
+;; - HEADER - opcode: QUERY, status: REFUSED, id: 36859
+;; flags: qr ; qd: 1 an: 0 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = SOA, class = IN
+
+;; ANSWERS:
+
+;; Message size: 41 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="12">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>SOA</extdom:type>
+                        <extdom:destination>ns2.domraider.com./[163.172.26.31]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: REFUSED, id: 19420
+;; flags: qr ; qd: 1 an: 0 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = SOA, class = IN
+
+;; ANSWERS:
+
+;; Message size: 41 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="13">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>NS</extdom:type>
+                        <extdom:destination>ns1.sedoparking.com./[209.200.164.69]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 8150
+;; flags: qr aa ; qd: 1 an: 2 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = NS, class = IN
+
+;; ANSWERS:
+campusliceofrosolone.it.	86400	IN	NS	ns2.sedoparking.com.
+campusliceofrosolone.it.	86400	IN	NS	ns1.sedoparking.com.
+
+;; Message size: 92 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="14">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>NS</extdom:type>
+                        <extdom:destination>ns2.sedoparking.com./[209.200.165.74]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 20582
+;; flags: qr aa ; qd: 1 an: 2 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = NS, class = IN
+
+;; ANSWERS:
+campusliceofrosolone.it.	86400	IN	NS	ns2.sedoparking.com.
+campusliceofrosolone.it.	86400	IN	NS	ns1.sedoparking.com.
+
+;; Message size: 92 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="15">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>NS</extdom:type>
+                        <extdom:destination>ns1.domraider.com./[62.210.116.139]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: REFUSED, id: 9873
+;; flags: qr ; qd: 1 an: 0 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = NS, class = IN
+
+;; ANSWERS:
+
+;; Message size: 41 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="16">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>NS</extdom:type>
+                        <extdom:destination>ns2.domraider.com./[163.172.26.31]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: REFUSED, id: 42120
+;; flags: qr ; qd: 1 an: 0 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = NS, class = IN
+
+;; ANSWERS:
+
+;; Message size: 41 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="17">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>MX</extdom:type>
+                        <extdom:destination>ns1.sedoparking.com./[209.200.164.69]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 51472
+;; flags: qr aa ; qd: 1 an: 1 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = MX, class = IN
+
+;; ANSWERS:
+campusliceofrosolone.it.	3600	IN	MX	0 localhost.
+
+;; Message size: 66 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="18">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>MX</extdom:type>
+                        <extdom:destination>ns2.sedoparking.com./[209.200.165.74]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 29244
+;; flags: qr aa ; qd: 1 an: 1 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = MX, class = IN
+
+;; ANSWERS:
+campusliceofrosolone.it.	3600	IN	MX	0 localhost.
+
+;; Message size: 66 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="19">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>MX</extdom:type>
+                        <extdom:destination>ns1.domraider.com./[62.210.116.139]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: REFUSED, id: 53520
+;; flags: qr ; qd: 1 an: 0 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = MX, class = IN
+
+;; ANSWERS:
+
+;; Message size: 41 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="20">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>MX</extdom:type>
+                        <extdom:destination>ns2.domraider.com./[163.172.26.31]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: REFUSED, id: 10282
+;; flags: qr ; qd: 1 an: 0 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = MX, class = IN
+
+;; ANSWERS:
+
+;; Message size: 41 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="21">
+                        <extdom:queryFor>localhost.</extdom:queryFor>
+                        <extdom:type>A</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 18758
+;; flags: qr aa rd ra ; qd: 1 an: 1 au: 1 ad: 1 
+;; QUESTIONS:
+;;	localhost., type = A, class = IN
+
+;; ANSWERS:
+localhost.		604800	IN	A	127.0.0.1
+
+;; Message size: 85 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="22">
+                        <extdom:queryFor>localhost.</extdom:queryFor>
+                        <extdom:type>AAAA</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 41765
+;; flags: qr aa rd ra ; qd: 1 an: 1 au: 1 ad: 1 
+;; QUESTIONS:
+;;	localhost., type = AAAA, class = IN
+
+;; ANSWERS:
+localhost.		604800	IN	AAAA	0:0:0:0:0:0:0:1
+
+;; Message size: 85 bytes</extdom:result>
+                    </extdom:query>
+                </extdom:queries>
+            </extdom:dnsErrorMsgData>
+        </extension>
+        <trID>
+            <clTRID>349858a2-cf79-4fff-96fa-435edfed2d1c</clTRID>
+            <svTRID>afdb44f0-b85e-407f-aae2-c4fa47d2bd3b</svTRID>
+        </trID>
+    </response>
+</epp>
+
+
+0
+

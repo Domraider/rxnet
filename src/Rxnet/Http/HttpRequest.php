@@ -38,8 +38,6 @@ class HttpRequest extends Subject
 
     protected $incompleteChunk = '';
 
-    protected $needMoreBytes = 0;
-
     protected $isStreamed = false;
 
     /** @var float $timeout Timeout in seconds */
@@ -204,78 +202,52 @@ class HttpRequest extends Subject
      */
     public function parseChunk($data)
     {
-        //echo "get Data\n----\n";
-        //echo $data."\n----\n";
-        // printf("Need more bytes : %s\n", $this->needMoreBytes > 0 ? "true" : "false");
-        if ($this->needMoreBytes > 0) {
-            //echo "  Previous chunk was incomplete read {$this->needMoreBytes}\n";
-            // Previous chunk was incomplete take on new one what's needed
-            $chunk = substr($data, 0, $this->needMoreBytes);
-            // Keep rest of data if too long
-            $data = substr($data, $this->needMoreBytes);
-            $read = strlen($chunk);
-            $this->needMoreBytes -= $read;
-            $this->incompleteChunk .= $chunk;
+        $raw = $this->incompleteChunk . $data;
 
-            //echo "  We have read $read new octets, we need to read {$this->needMoreBytes} more octets\n";
-
-            // Chunk was completely managed, notify everybody if we are streaming
-            if ($this->needMoreBytes <= 0) {
-                // We got a full chunk
-                //echo " # Chunk is complete, leaving ".strlen($data)."octets for the next\n";
-                $this->chunkCompleted($this->incompleteChunk);
-                $this->incompleteChunk = '';
-            }
-            if (!$data) {
-                return;
-            }
-        }
         // Detect if we have the http end in this data
-        $end = strpos($this->incompleteChunk . $data, "0\r\n\r\n") !== false;
-        // printf("End : %s\n", $end > 0 ? "true" : "false");
-
+        $end = strpos($raw, "0\r\n\r\n") !== false;
 
         // Search for control octets in the mess (yes some are messy)
-        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $this->incompleteChunk . $data, $matches);
+        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $raw, $matches);
 
         // No chunk limiters it's an incomplete one
         if (!$end && !$matches[0]) {
             $this->incompleteChunk .= $data;
-            $this->needMoreBytes -= strlen($data);
-            // printf("Need more bytes (2) : %s\n", $this->needMoreBytes);
             return;
         }
 
         foreach ($matches[0] as $k => $control) {
+            $controlLength = strlen($control);
             // Search control position with it's \r\n in string
-            $controlPos = strpos($this->incompleteChunk . $data, $control) + strlen($control);
+            $controlPos = strpos($raw, $control) + $controlLength;
             // Get control hexdec
             $control = rtrim(trim($control));
             // Extract chunk length from control
             $chunkLength = hexdec($control);
             // Extract from data the chunk
-            $chunk = substr($this->incompleteChunk . $data, $controlPos, $chunkLength);
+            $chunk = substr($raw, $controlPos, $chunkLength);
             $chunkRealLength = strlen($chunk);
 
             //echo "Control {$control} is at pos {$controlPos} and has {$chunkLength} data\n";
 
             // Chunk is too small for length explained, wait for next packet
             if ($chunkRealLength < $chunkLength) {
-                $this->needMoreBytes = $chunkLength - $chunkRealLength;
                 $this->incompleteChunk .= $chunk;
-                //echo "  chunk is incomplete we need to read {$this->needMoreBytes} more octets\n";
 
                 if (!$end) {
-                    continue;
+                    break;
                 }
             }
             // Chunk is perfect add it to buffer
             $this->chunkCompleted($chunk);
-            $this->incompleteChunk = substr($this->incompleteChunk . $data, $chunkLength);
-            if (false === $this->incompleteChunk) {
-                $this->incompleteChunk = '';
+            $raw = substr($raw, $chunkLength + $controlLength);
+            if (false === $raw) {
+                $raw = '';
             }
         }
+
+        $this->incompleteChunk = $raw;
+
         if ($end) {
             $this->completed();
         }

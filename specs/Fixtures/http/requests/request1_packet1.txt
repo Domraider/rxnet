@@ -1,0 +1,297 @@
+HTTP/1.1 200 OK
+Server: nginx/1.10.0 (Ubuntu)
+Date: Thu, 09 Mar 2017 10:41:24 GMT
+Content-Type: text/xml;charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Expires: 0
+Cache-Control: no-cache
+X-Powered-By: Undertow/1
+Pragma: no-cache
+Content-Language: en
+
+1f14
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<epp xmlns="urn:ietf:params:xml:ns:epp-1.0" xmlns:domain="urn:ietf:params:xml:ns:domain-1.0" xmlns:contact="urn:ietf:params:xml:ns:contact-1.0"  xmlns:rgp="urn:ietf:params:xml:ns:rgp-1.0"  xmlns:extcon="http://www.nic.it/ITNIC-EPP/extcon-1.0" xmlns:extdom="http://www.nic.it/ITNIC-EPP/extdom-2.0"  xmlns:extepp="http://www.nic.it/ITNIC-EPP/extepp-2.0">
+    <response>
+        <result code="1301">
+            <msg lang="en">Command completed successfully; ack to dequeue</msg>
+        </result>
+        <msgQ count="439" id="61641651">
+            <qDate>2017-01-19T09:55:27.000+01:00</qDate>
+            <msg lang="en">DNS check ended unsuccessfully</msg>
+        </msgQ>
+        <extension>
+            <extdom:dnsErrorMsgData version="2.0">
+                <extdom:domain>campusliceofrosolone.it</extdom:domain>
+                <extdom:status>FAILED</extdom:status>
+                <extdom:validationId>35c07b13-cd6f-4fbd-a21e-8bd6008b047e</extdom:validationId>
+                <extdom:validationDate>2017-01-19T09:55:26.582+01:00</extdom:validationDate>
+                <extdom:nameservers>
+                    <extdom:nameserver name="ns1.sedoparking.com.">
+                        <extdom:address type="IPv4">209.200.164.69</extdom:address>
+                    </extdom:nameserver>
+                    <extdom:nameserver name="ns2.sedoparking.com.">
+                        <extdom:address type="IPv4">209.200.165.74</extdom:address>
+                    </extdom:nameserver>
+                    <extdom:nameserver name="ns1.domraider.com.">
+                        <extdom:address type="IPv4">62.210.116.139</extdom:address>
+                    </extdom:nameserver>
+                    <extdom:nameserver name="ns2.domraider.com.">
+                        <extdom:address type="IPv4">163.172.26.31</extdom:address>
+                    </extdom:nameserver>
+                </extdom:nameservers>
+                <extdom:tests>
+                    <extdom:test name="NameserversResolvableTest" status="SUCCEEDED">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.domraider.com." status="SUCCEEDED"/>
+                    </extdom:test>
+                    <extdom:test name="IPCompareTest" skipped="true"/>
+                    <extdom:test name="SOAQueryAnswerTest" status="FAILED">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="FAILED">
+                            <extdom:detail status="FAILED" queryId="11">'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="FAILED">
+                            <extdom:detail status="FAILED" queryId="12">'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="SOAMasterCompareTest" status="WARNING">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="WARNING">
+                            <extdom:detail queryId="11">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="WARNING">
+                            <extdom:detail queryId="12">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="IPSoaTest" skipped="true"/>
+                    <extdom:test name="NSQueryAnswerTest" status="FAILED">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="FAILED">
+                            <extdom:detail status="FAILED" queryId="15">'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="FAILED">
+                            <extdom:detail status="FAILED" queryId="16">'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="NSCompareTest" status="FAILED">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="FAILED">
+                            <extdom:detail queryId="13">Nameservers list [ns1.domraider.com., ns2.domraider.com., ns1.sedoparking.com., ns2.sedoparking.com.] different to NS Records: [ns1.sedoparking.com., ns2.sedoparking.com.]</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="FAILED">
+                            <extdom:detail queryId="14">Nameservers list [ns1.domraider.com., ns2.domraider.com., ns1.sedoparking.com., ns2.sedoparking.com.] different to NS Records: [ns1.sedoparking.com., ns2.sedoparking.com.]</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns1.domraider.com." status="WARNING">
+                            <extdom:detail queryId="15">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="WARNING">
+                            <extdom:detail queryId="16">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="NSCountTest" status="WARNING">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="WARNING">
+                            <extdom:detail queryId="15">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="WARNING">
+                            <extdom:detail queryId="16">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="MXQueryAnswerTest" status="FAILED">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="FAILED">
+                            <extdom:detail status="FAILED" queryId="19">'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="FAILED">
+                            <extdom:detail status="FAILED" queryId="20">'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="MXCompareTest" status="WARNING">
+                        <extdom:nameserver name="ns1.
+1000
+sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="WARNING">
+                            <extdom:detail queryId="19">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="WARNING">
+                            <extdom:detail queryId="20">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="MXRecordIsPresentTest" status="WARNING">
+                        <extdom:nameserver name="ns1.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns2.sedoparking.com." status="SUCCEEDED"/>
+                        <extdom:nameserver name="ns1.domraider.com." status="WARNING">
+                            <extdom:detail queryId="19">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                        <extdom:nameserver name="ns2.domraider.com." status="WARNING">
+                            <extdom:detail queryId="20">Test skipped for 'REFUSED' returncode</extdom:detail>
+                        </extdom:nameserver>
+                    </extdom:test>
+                    <extdom:test name="CNAMEHostTest" status="SUCCEEDED">
+                        <extdom:detail name="ns1.sedoparking.com." status="SUCCEEDED"></extdom:detail>
+                        <extdom:detail name="localhost." status="SUCCEEDED"></extdom:detail>
+                        <extdom:detail name="ns2.sedoparking.com." status="SUCCEEDED"></extdom:detail>
+                    </extdom:test>
+                </extdom:tests>
+                <extdom:queries>
+                    <extdom:query id="1">
+                        <extdom:queryFor>ns1.sedoparking.com.</extdom:queryFor>
+                        <extdom:type>A</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 19208
+;; flags: qr rd ra ; qd: 1 an: 1 au: 2 ad: 2 
+;; QUESTIONS:
+;;	ns1.sedoparking.com., type = A, class = IN
+
+;; ANSWERS:
+ns1.sedoparking.com.	781	IN	A	209.200.164.69
+
+;; Message size: 123 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="2">
+                        <extdom:queryFor>ns1.sedoparking.com.</extdom:queryFor>
+                        <extdom:type>AAAA</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 1063
+;; flags: qr rd ra ; qd: 1 an: 0 au: 1 ad: 0 
+;; QUESTIONS:
+;;	ns1.sedoparking.com., type = AAAA, class = IN
+
+;; ANSWERS:
+
+;; Message size: 109 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="3">
+                        <extdom:queryFor>ns2.sedoparking.com.</extdom:queryFor>
+                        <extdom:type>A</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 11638
+;; flags: qr rd ra ; qd: 1 an: 1 au: 2 ad: 2 
+;; QUESTIONS:
+;;	ns2.sedoparking.com., type = A, class = IN
+
+;; ANSWERS:
+ns2.sedoparking.com.	781	IN	A	209.200.165.74
+
+;; Message size: 123 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="4">
+                        <extdom:queryFor>ns2.sedoparking.com.</extdom:queryFor>
+                        <extdom:type>AAAA</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 47229
+;; flags: qr rd ra ; qd: 1 an: 0 au: 1 ad: 0 
+;; QUESTIONS:
+;;	ns2.sedoparking.com., type =
+1000
+ AAAA, class = IN
+
+;; ANSWERS:
+
+;; Message size: 109 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="5">
+                        <extdom:queryFor>ns1.domraider.com.</extdom:queryFor>
+                        <extdom:type>A</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 33039
+;; flags: qr rd ra ; qd: 1 an: 1 au: 4 ad: 5 
+;; QUESTIONS:
+;;	ns1.domraider.com., type = A, class = IN
+
+;; ANSWERS:
+ns1.domraider.com.	300	IN	A	62.210.116.139
+
+;; Message size: 280 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="6">
+                        <extdom:queryFor>ns1.domraider.com.</extdom:queryFor>
+                        <extdom:type>AAAA</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 26228
+;; flags: qr rd ra ; qd: 1 an: 0 au: 1 ad: 0 
+;; QUESTIONS:
+;;	ns1.domraider.com., type = AAAA, class = IN
+
+;; ANSWERS:
+
+;; Message size: 107 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="7">
+                        <extdom:queryFor>ns2.domraider.com.</extdom:queryFor>
+                        <extdom:type>A</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 33720
+;; flags: qr rd ra ; qd: 1 an: 1 au: 4 ad: 5 
+;; QUESTIONS:
+;;	ns2.domraider.com., type = A, class = IN
+
+;; ANSWERS:
+ns2.domraider.com.	300	IN	A	163.172.26.31
+
+;; Message size: 280 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="8">
+                        <extdom:queryFor>ns2.domraider.com.</extdom:queryFor>
+                        <extdom:type>AAAA</extdom:type>
+                        <extdom:destination>local resolver</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 19641
+;; flags: qr rd ra ; qd: 1 an: 0 au: 1 ad: 0 
+;; QUESTIONS:
+;;	ns2.domraider.com., type = AAAA, class = IN
+
+;; ANSWERS:
+
+;; Message size: 107 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="9">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>SOA</extdom:type>
+                        <extdom:destination>ns1.sedoparking.com./[209.200.164.69]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 23486
+;; flags: qr aa ; qd: 1 an: 1 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = SOA, class = IN
+
+;; ANSWERS:
+campusliceofrosolone.it.	86400	IN	SOA	ns1.sedoparking.com. hostmaster.sedo.de. 2015071001 86400 10800 604800 86400
+
+;; Message size: 114 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="10">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>SOA</extdom:type>
+                        <extdom:destination>ns2.sedoparking.com./[209.200.165.74]</extdom:destination>
+                        <extdom:result>
+;; - HEADER - opcode: QUERY, status: NOERROR, id: 57826
+;; flags: qr aa ; qd: 1 an: 1 au: 0 ad: 0 
+;; QUESTIONS:
+;;	campusliceofrosolone.it., type = SOA, class = IN
+
+;; ANSWERS:
+campusliceofrosolone.it.	86400	IN	SOA	ns1.sedoparking.com. hostmaster.sedo.de. 2015071001 86400 10800 604800 86400
+
+;; Message size: 114 bytes</extdom:result>
+                    </extdom:query>
+                    <extdom:query id="11">
+                        <extdom:queryFor>campusliceofrosolone.it.</extdom:queryFor>
+                        <extdom:type>SOA</extdom:type>
+                        <extdom:destination>ns1.domraider.com
