@@ -9,6 +9,9 @@ use LibDNS\Messages\MessageFactory;
 use LibDNS\Messages\MessageTypes;
 use LibDNS\Records\QuestionFactory;
 use LibDNS\Records\RecordCollectionFactory;
+use PhpOption\None;
+use PhpOption\Option;
+use PhpOption\Some;
 use Rx\DisposableInterface;
 use Rx\Observable;
 use Rx\Subject\Subject;
@@ -83,7 +86,7 @@ class Dns extends Subject
                     if(!$entry) {
                         continue;
                     }
-                    $this->cache[$entry] = $ip;
+                    $this->insertIntoCache($entry, $ip, -1);
                 }
             }
 
@@ -113,29 +116,32 @@ class Dns extends Subject
         if (filter_var($host, FILTER_VALIDATE_IP)) {
             return Observable::just($host);
         }
-        // Caching
-        if (array_key_exists($host, $this->cache)) {
-            return Observable::just($this->cache[$host]);
-        }
-        return $this->lookup($host, 'A')
-            ->flatMap(function (Event $event) use ($host, $maxRecursion) {
-                if (!$event->data["answers"]) {
-                    throw new RemoteNotFoundException("Can't resolve {$host}");
-                }
-                $ip = Arrays::random($event->data["answers"]);
-                if (!$ip) {
-                    throw new RemoteNotFoundException("Can't resolve {$host}");
-                }
 
-                if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-                    if ($maxRecursion <= 0) {
-                        throw new RecursionLimitException();
-                    }
-                    return $this->resolve($ip, $maxRecursion - 1);
-                }
-
-                $this->cache[$host] = $ip;
+        return $this->getFromCache($host)
+            ->map(function($ip) {
                 return Observable::just($ip);
+            })
+            ->getOrCall(function() use ($host, $maxRecursion) {
+                return $this->lookup($host, 'A')
+                    ->flatMap(function (Event $event) use ($host, $maxRecursion) {
+                        if (!$event->data["answers"]) {
+                            throw new RemoteNotFoundException("Can't resolve {$host}");
+                        }
+                        $answer = Arrays::random($event->data["answers"]);
+                        if (!$answer) {
+                            throw new RemoteNotFoundException("Can't resolve {$host}");
+                        }
+
+                        $ip = $answer['data'];
+                        if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+                            if ($maxRecursion <= 0) {
+                                throw new RecursionLimitException();
+                            }
+                            return $this->resolve($ip, $maxRecursion - 1);
+                        }
+                        $this->insertIntoCache($host, $ip, $answer['ttl']);
+                        return Observable::just($ip);
+                    });
             });
     }
 
@@ -186,7 +192,10 @@ class Dns extends Subject
 
                 foreach ($response->getAnswerRecords() as $record) {
                     /** @var \LibDNS\Records\Resource $record */
-                    $return['answers'][] = (string)$record->getData();
+                    $return['answers'][] = [
+                        'data' => (string)$record->getData(),
+                        'ttl' => $record->getTTL(),
+                    ];
                 }
                 foreach ($response->getAuthorityRecords() as $record) {
                     /** @var \LibDNS\Records\Resource $record */
@@ -221,5 +230,34 @@ class Dns extends Subject
     public function addObserver(MiddlewareInterface $observer)
     {
         return $observer->observe($this->observable);
+    }
+
+    /**
+     * @param $name
+     * @param $ip
+     * @param $ttl
+     */
+    public function insertIntoCache($name, $ip, $ttl) {
+        $expire = $ttl >= 0 ? mktime() + $ttl : -1;
+        $this->cache[$name] = [
+            'ip' => $ip,
+            'expire' => $expire,
+        ];
+    }
+
+    /**
+     * @param $name
+     * @return Option
+     */
+    public function getFromCache($name) {
+        return Option::fromArraysValue($this->cache, $name)
+            ->flatMap(function($cachedData) use ($name) {
+                $expire = $cachedData['expire'];
+                if ($expire == -1 || $expire >= mktime()) {
+                    return Some::create($cachedData['ip']);
+                }
+                unset($this->cache[$name]);
+                return None::create();
+            });
     }
 }
