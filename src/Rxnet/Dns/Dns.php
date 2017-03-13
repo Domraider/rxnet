@@ -237,7 +237,7 @@ class Dns extends Subject
      * @param $ip
      * @param $ttl
      */
-    public function insertIntoCache($name, $ip, $ttl) {
+    protected function insertIntoCache($name, $ip, $ttl) {
         $expire = $ttl >= 0 ? mktime() + $ttl : -1;
         $this->cache[$name] = [
             'ip' => $ip,
@@ -249,7 +249,7 @@ class Dns extends Subject
      * @param $name
      * @return Option
      */
-    public function getFromCache($name) {
+    protected function getFromCache($name) {
         return Option::fromArraysValue($this->cache, $name)
             ->flatMap(function($cachedData) use ($name) {
                 $expire = $cachedData['expire'];
