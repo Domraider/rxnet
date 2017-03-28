@@ -19,6 +19,9 @@ class EventSource extends Subject
      */
     protected $routes = [];
 
+    /** @var string[] */
+    protected $loadedNamespaces = [];
+
     /**
      * @var \SplObjectStorage
      */
@@ -159,13 +162,17 @@ class EventSource extends Subject
      */
     public function loadNamespaceRoutes($namespace)
     {
+        if (in_array($namespace, $this->loadedNamespaces)) {
+            \Log::error(sprintf("Namespace %s is already loaded", $namespace));
+            return;
+        }
 
         foreach (array_get($this->routes, $namespace, []) as $k => $class) {
 
             if (!is_object($class)) {
                 $route = \App::make($class);
-
                 $this->routes[$k] = \App::call([$route, 'handle']);
+                $this->loadedNamespaces[] = $namespace;
             }
         }
     }
