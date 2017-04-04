@@ -1,11 +1,13 @@
 <?php
 namespace Rxnet\Exceptions;
 use Rxnet\Contract\HasLabelsInterface;
+use Rxnet\Contract\HasLabelsTrait;
 use Underscore\Types\Arrays;
 
 class ExceptionWithLabels extends \Exception implements HasLabelsInterface
 {
-    protected $labels;
+    use HasLabelsTrait;
+
     public function __construct($message, $labels = [], \Exception $previous = null)
     {
         $this->labels = $labels;
@@ -18,19 +20,5 @@ class ExceptionWithLabels extends \Exception implements HasLabelsInterface
             $message.= ' > '.$previous->getMessage();
         }
         parent::__construct($message, $code, $previous);
-    }
-
-    /**
-     * @return array
-     */
-    public function getLabels() {
-        return $this->labels;
-    }
-
-    /**
-     * @return array
-     */
-    public function addLabel($key, $value) {
-        return $this->labels[$key] = $value;
     }
 }
