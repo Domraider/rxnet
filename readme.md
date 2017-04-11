@@ -296,6 +296,22 @@ $statsd->gauge("database.connections", 42)
 
 ```
 
+## Mysql
+
+The mysql client uses mysqli.
+
+```php
+$conn = new Rxnte\Mysql\Connection([
+    'host' => 'localhost',
+    'user' => 'myUser',
+    'password' => 'myPasswd',
+    'database' => 'myDb'
+]);
+
+$conn->query('SELECT NOW()');
+
+$conn->transaction(['SELECT NOW()']);
+```
 
 ## Sweet
 
