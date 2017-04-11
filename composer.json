@@ -42,7 +42,8 @@
     "holyshared/file-fixture": "^2.0"
   },
   "suggest": {
-    "ext-zmq": "*"
+    "ext-zmq": "*",
+    "ext-mysqli": "*"
   },
   "license": "MIT",
   "authors": [
