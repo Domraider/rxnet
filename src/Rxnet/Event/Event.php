@@ -16,10 +16,6 @@ class Event implements EventInterface, PriorityInterface
      * @var mixed
      */
     public $data;
-    /**
-     * @var array
-     */
-    public $labels;
 
     /** @var int */
     protected $priority;
