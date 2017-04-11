@@ -7,6 +7,7 @@ use Rx\ObserverInterface;
 use Rx\Subject\ReplaySubject;
 use Rx\Subject\Subject;
 use Rxnet\Contract\EventInterface;
+use Rxnet\Exceptions\RouteNotFoundException;
 use Rxnet\NotifyObserverTrait;
 use \Exception;
 use Underscore\Types\Arrays;
@@ -52,7 +53,7 @@ class Router implements ObserverInterface
 
     /**
      * @param Subject|EventInterface $value
-     * @throws \Exception
+     * @throws RouteNotFoundException
      */
     public function onNext($value)
     {
@@ -102,7 +103,13 @@ class Router implements ObserverInterface
                 return;
             }
         }
-        $value->onError(new Exception("not found"));
+
+        $e = new RouteNotFoundException("not found");
+        if ($value instanceof Subject) {
+            $value->onError($e);
+        } else {
+            throw $e;
+        }
     }
 
     public function onError(Exception $error)
