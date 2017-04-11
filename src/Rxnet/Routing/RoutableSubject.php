@@ -1,7 +1,6 @@
 <?php
 namespace Rxnet\Routing;
 
-
 use Ramsey\Uuid\Uuid;
 use Rxnet\Contract\EventInterface;
 use Rxnet\Contract\EventTrait;
@@ -11,9 +10,9 @@ use Underscore\Types\Arrays;
 class RoutableSubject extends Subject implements EventInterface
 {
     use EventTrait;
+
     public $data;
     public $name;
-    public $labels = [];
 
     public function __construct($name, $data = null, $labels = [])
     {
