@@ -237,16 +237,21 @@ class Http extends Observable
      * @param array $opts
      * @return Tcp|Tls
      */
-    public function getConnector($scheme, $hostName, array $opts = []) {
-        if($scheme == 'http') {
-            return new Tcp($this->loop);
+    public function getConnector($scheme, $hostName, array $opts = [])
+    {
+        if ($scheme == 'http') {
+            $connector = new Tcp($this->loop);
+        } else {
+            $connector = new Tls($this->loop);
+            if ($sslOpts = Arrays::get($opts, 'ssl')) {
+                $connector->setSslContextParams($sslOpts);
+            }
+            $connector->setHostName($hostName);
         }
-        $connector = new Tls($this->loop);
-        if($sslOpts = Arrays::get($opts, 'ssl')) {
-            $connector->setSslContextParams($sslOpts);
-        }
-        $connector->setHostName($hostName);
 
+        if ($bindTo = Arrays::get($opts, 'bindto')) {
+            $connector->bindTo($bindTo);
+        }
         return $connector;
     }
 
