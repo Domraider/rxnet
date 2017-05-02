@@ -72,4 +72,9 @@ class RoutableSubject extends Subject implements EventInterface
     {
         $this->labels = $labels;
     }
+
+    public function removeObservers()
+    {
+        $this->observers  = [];
+    }
 }
