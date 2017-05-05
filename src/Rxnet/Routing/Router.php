@@ -104,14 +104,7 @@ class Router implements ObserverInterface
             }
         }
 
-        $e = new RouteNotFoundException("not found");
-        if ($value instanceof Subject) {
-            if ($value instanceof MandatoryRouteSubjectInterface) {
-                $value->onError($e);
-            }
-        } else {
-            throw $e;
-        }
+        throw new RouteNotFoundException("not found");
     }
 
     public function onError(Exception $error)
