@@ -15,6 +15,8 @@ use Underscore\Types\Arrays;
 
 class HttpRequest extends Subject
 {
+    const HTTP_TIMEOUT_EXCEPTION_MESSAGE = 'Http Timeout';
+
     use NotifyObserverTrait;
     /**
      * @var string
@@ -285,7 +287,7 @@ class HttpRequest extends Subject
             $this->timeoutTimer = EventLoop::getLoop()
                 ->addTimer($this->timeout, function() {
                     if (!$this->isDisposed()) {
-                        $this->onError(new \Exception("Timeout"));
+                        $this->onError(new \Exception(self::HTTP_TIMEOUT_EXCEPTION_MESSAGE));
                         $this->dispose();
                     }
                 });

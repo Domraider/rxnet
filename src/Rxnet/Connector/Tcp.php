@@ -46,7 +46,7 @@ class Tcp extends Connector
                 $timer = EventLoop::getLoop()
                     ->addTimer($this->connectTimeout, function () use ($observer, $closeSocket) {
                         $closeSocket();
-                        $observer->onError(new \Exception("Connect timeout"));
+                        $observer->onError(new \Exception(self::CONNECT_TIMEOUT_EXCEPTION_MESSAGE));
                     });
             }
 

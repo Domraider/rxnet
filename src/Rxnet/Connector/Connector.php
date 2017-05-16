@@ -13,6 +13,8 @@ use Rx\Observable;
  */
 abstract class Connector extends Observable
 {
+    const CONNECT_TIMEOUT_EXCEPTION_MESSAGE = 'Connect Timeout';
+
     use NotifyObserverTrait;
     /**
      * @var LibEvLoop
