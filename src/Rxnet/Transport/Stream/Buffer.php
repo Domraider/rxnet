@@ -24,6 +24,11 @@ class Buffer extends Observable
 
     public function write()
     {
+        if (!is_resource($this->socket)) {
+            $this->loop->removeWriteStream($this->socket);
+            $this->notifyError(new \RuntimeException('Unable to write to stream, because its closed or invalid'));
+            return;
+        }
         $sent = fwrite($this->socket, $this->data);
         if (0 === $sent && feof($this->socket)) {
             $this->loop->removeWriteStream($this->socket);
