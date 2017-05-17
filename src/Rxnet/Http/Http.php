@@ -6,6 +6,7 @@ use EventLoop\EventLoop;
 use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use Rx\Disposable\CallbackDisposable;
 use Rx\DisposableInterface;
 use Rx\ObserverInterface;
 use Rxnet\Dns\Dns;
@@ -168,7 +169,7 @@ class Http extends Observable
      */
     public function requestRawWithProxy(Request $request, $proxy, array $opts = [])
     {
-        return Observable::create(function(ObserverInterface $observer)  use($request, $opts, $proxy) {
+        return Observable::create(function(ObserverInterface $observer)  use ($request, $opts, $proxy) {
             $streamed = Arrays::get($opts, 'stream', false);
 
             $connectTimeout = Arrays::get($opts, 'connect_timeout', 0);
@@ -178,16 +179,20 @@ class Http extends Observable
             $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'), $timeout);
             $proxyRequest->subscribe($req);
 
-            $this->dns->resolve($proxy['host'])
-                ->flatMap(
-                    function ($ip) use ($proxy, $opts, $request, $connectTimeout) {
-                        return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
-                            ->setTimeout($connectTimeout)
-                            ->connect($ip, $proxy['port']);
-                    })
+            $disposable = $this->dns
+                ->resolve($proxy['host'])
+                ->flatMap(function ($ip) use ($proxy, $opts, $request, $connectTimeout) {
+                    return $this
+                        ->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
+                        ->setTimeout($connectTimeout)
+                        ->connect($ip, $proxy['port']);
+                })
                 ->subscribe($proxyRequest);
 
             $req->subscribe($observer);
+            return new CallbackDisposable(function() use ($disposable) {
+                $disposable->dispose();
+            });
         });
     }
 
@@ -199,7 +204,7 @@ class Http extends Observable
     public function requestRaw(Request $request, array $opts = [])
     {
         // To retry properly this observable will be retried
-        $request = Observable::create(function(ObserverInterface $observer)  use($request, $opts) {
+        return Observable::create(function(ObserverInterface $observer)  use($request, $opts) {
             $scheme = $request->getUri()->getScheme();
             if (!$port = $request->getUri()->getPort()) {
                 $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
@@ -210,13 +215,14 @@ class Http extends Observable
             $timeout = Arrays::get($opts, 'timeout', 0);
             $req = new HttpRequest($request, $streamed, $timeout);
 
-            $this->dns->resolve($request->getUri()->getHost())
-                ->flatMap(
-                    function ($ip) use ($scheme, $opts, $port, $request, $connectTimeout) {
-                        $connect = $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
-                            ->setTimeout($connectTimeout)
-                            ->connect($ip, $port);
-                        return $connect->map(function (Event $e) {
+            $disposable = $this->dns
+                ->resolve($request->getUri()->getHost())
+                ->flatMap(function ($ip) use ($scheme, $opts, $port, $request, $connectTimeout) {
+                    return $this
+                        ->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
+                        ->setTimeout($connectTimeout)
+                        ->connect($ip, $port)
+                        ->map(function (Event $e) {
                             if ($e instanceof ConnectorEvent) {
                                 $stream = $e->data;
                                 $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
@@ -224,12 +230,14 @@ class Http extends Observable
                             }
                             return $e;
                         });
-                    })
+                })
                 ->subscribe($req);
 
             $req->subscribe($observer);
+            return new CallbackDisposable(function() use ($disposable) {
+                $disposable->dispose();
+            });
         });
-        return $request;
     }
 
     /**
