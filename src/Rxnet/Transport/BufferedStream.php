@@ -28,24 +28,23 @@ class BufferedStream extends Stream
     public function readSocket($stream)
     {
         $read = true;
-        $close = false;
+        if (!is_resource($stream)) {
+            $this->close();
+            return;
+        }
         while ($read) {
             $data = fread($stream, $this->bufferSize);
             if ($data === false || strlen($data) === 0) {
                 $read = false;
-            }
-            else {
+            } else {
                 $this->readBuffer .= $data;
             }
             if (!is_resource($stream) || feof($stream)) {
                 $read = false;
-                $close = true;
+                $this->close();
             }
         }
         $this->processReadBuffer();
-        if ($close) {
-            $this->close();
-        }
     }
 
     /**
@@ -54,6 +53,10 @@ class BufferedStream extends Stream
      */
     public function write($data)
     {
+        if (!is_resource($this->socket)) {
+            $this->close();
+            return Observable::error(new \RuntimeException("Unable to write to stream, because its closed or invalid"));
+        }
         $buffer = new Buffer($this->socket, $this->loop, $data);
         // Write error close the stream
         $buffer->subscribeCallback(null, [$this, "close"], null, new EventLoopScheduler($this->loop));
