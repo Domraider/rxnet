@@ -49,8 +49,9 @@ class OnDemandIterator implements OnDemandInterface
                 $this->obs->onCompleted();
                 return;
             }
-            $this->obs->onNext($this->iterator->current());
+            $currentValue = $this->iterator->current();
             $this->iterator->next();
+            $this->obs->onNext($currentValue);
         }
     }
 
