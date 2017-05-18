@@ -27,24 +27,21 @@ class BufferedStream extends Stream
 
     public function readSocket($stream)
     {
-        $read = true;
-        if (!is_resource($stream)) {
-            $this->close();
-            return;
-        }
-        while ($read) {
+        while (is_resource($stream) && !feof($stream)) {
             $data = fread($stream, $this->bufferSize);
-            if ($data === false || strlen($data) === 0) {
-                $read = false;
-            } else {
-                $this->readBuffer .= $data;
-            }
-            if (!is_resource($stream) || feof($stream)) {
-                $read = false;
+            if (false === $data) {
+                $this->processReadBuffer();
                 $this->close();
+                return;
             }
+            if (strlen($data) <= 0) {
+                $this->processReadBuffer();
+                return;
+            }
+            $this->readBuffer .= $data;
         }
         $this->processReadBuffer();
+        $this->close();
     }
 
     /**
