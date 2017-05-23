@@ -94,7 +94,7 @@ class RabbitMessage
      */
     public function getDataClone()
     {
-        return $this->serializer->unserialize($this->message);
+        return $this->serializer->unserialize($this->message->content);
     }
 
     /**
