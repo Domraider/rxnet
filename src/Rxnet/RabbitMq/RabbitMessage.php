@@ -81,11 +81,21 @@ class RabbitMessage
     }
 
     /**
+     * @deprecated must use getDataClone
      * @return mixed
      */
     public function getData()
     {
         return $this->data;
+    }
+
+    /**
+     * @deprecated must use getDataClone
+     * @return mixed
+     */
+    public function getDataClone()
+    {
+        return $this->serializer->unserialize($this->message);
     }
 
     /**
