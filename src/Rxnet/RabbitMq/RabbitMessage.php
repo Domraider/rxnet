@@ -90,7 +90,6 @@ class RabbitMessage
     }
 
     /**
-     * @deprecated must use getDataClone
      * @return mixed
      */
     public function getDataClone()
