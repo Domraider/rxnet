@@ -183,17 +183,18 @@ class RabbitMessage
     /**
      * @param $delay
      * @param string $exchange
+     * @param array|null $data
      * @return Observable
      */
-    public function retryLater($delay, $exchange = 'direct.delayed')
+    public function retryLater($delay, $exchange = 'direct.delayed', $data = null)
     {
         $headers = $this->prepareHeaders(['x-delay' => $delay]);
 
         return $this->reject(false)
-            ->flatMap(function () use ($headers, $exchange) {
+            ->flatMap(function () use ($data, $headers, $exchange) {
                 return \Rxnet\fromPromise(
                     $this->channel->publish(
-                        $this->serializer->serialize($this->data),
+                        $this->serializer->serialize($data === null ? $this->getData() : $data),
                         $headers,
                         $exchange,
                         $this->routingKey
@@ -203,15 +204,16 @@ class RabbitMessage
     }
 
     /**
+     * @param array|null $data
      * @return Observable
      */
-    public function rejectToBottom()
+    public function rejectToBottom($data = null)
     {
         return $this->reject(false)
-            ->flatMap(function () {
+            ->flatMap(function () use ($data) {
                 return \Rxnet\fromPromise(
                     $this->channel->publish(
-                        $this->serializer->serialize($this->data),
+                        $this->serializer->serialize($data === null ? $this->getData() : $data),
                         $this->prepareHeaders(),
                         $this->exchange,
                         $this->routingKey
