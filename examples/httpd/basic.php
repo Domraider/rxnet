@@ -20,5 +20,33 @@ $httpd->route('POST', '/{var}', function(HttpdRequest $request, HttpdResponse $r
     $response->json(["msg"=>"You asked for {$var}", "data"=>$data]);
 });
 
+$httpd->route('GET', '/redirect', function(HttpdRequest $request, HttpdResponse $response) {
+    $response->text("Redirect...", 301, ["Location" => "/redirected"]);
+});
+$httpd->route('GET', '/redirected', function(HttpdRequest $request, HttpdResponse $response) {
+    $response->json(["Status" => "Ok"]);
+});
+
+$httpd->route('GET', '/redirect/loop/self', function(HttpdRequest $request, HttpdResponse $response) {
+    $response->text("Redirect...", 301, ["Location" => "/redirect/loop/self"]);
+});
+$httpd->route('GET', '/redirect/loop/AZ', function(HttpdRequest $request, HttpdResponse $response) {
+    $response->text("Redirect...", 301, ["Location" => "/redirect/loop/ZA"]);
+});
+$httpd->route('GET', '/redirect/loop/ZA', function(HttpdRequest $request, HttpdResponse $response) {
+    $response->text("Redirect...", 301, ["Location" => "/redirect/loop/AZ"]);
+});
+
+for ($i = 0; $i<100; $i++) {
+    $httpd->route('GET', "/redirect/loop/{$i}", function(HttpdRequest $request, HttpdResponse $response) use ($i) {
+        $j = $i+1;
+        $response->text("Redirect...", 301, ["Location" => "/redirect/loop/{$j}"]);
+    });
+}
+
+$httpd->route('GET', '/redirect/loop/100', function(HttpdRequest $request, HttpdResponse $response) {
+    $response->json(["Status" => "Ok"]);
+});
+
 $httpd->listen(23080);
 $loop->run();
