@@ -93,6 +93,13 @@ $opts = [
   // Add whatever option you want on your https query
   'ssl' => [
     'verify_peer' => false
+  ],
+  // allow redirect
+  'allow_redirects' => true,
+  // or
+  'allow_redirects' => [
+    // max redirects to follow
+    'max' => 10
   ]
 ];
 
