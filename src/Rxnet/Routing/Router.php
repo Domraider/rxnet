@@ -42,7 +42,7 @@ class Router implements ObserverInterface
 
         foreach ($detail as $routeData) {
             $b = $this->buildRegexForRoute($routeData);
-            $regex = '(' . $b[0] . ')';
+            $regex = '~^(' . $b[0] . ')$~';
             $routeMap = $b[1];
             $routes[] = compact('regex', 'routeMap', 'where');
         }
