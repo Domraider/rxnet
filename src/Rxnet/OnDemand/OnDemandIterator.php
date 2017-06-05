@@ -65,12 +65,15 @@ class OnDemandIterator implements OnDemandInterface
     }
 
     /**
-     * @return mixed
+     * @return void
      */
     public function cleanup()
     {
         $this->completed = true;
         $this->iterator = null;
+        if (!$this->obs->isDisposed()) {
+            $this->obs->onCompleted();
+        }
     }
 
     public function isIteratorValid()
