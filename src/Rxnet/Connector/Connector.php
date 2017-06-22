@@ -100,25 +100,7 @@ abstract class Connector extends Observable
             $this->context = stream_context_create($this->contextParams);
         }
         $address = $this->getSocketUrl($this->host, $this->port, $this->protocol);
-
-        if ($this->context) {
-            $socket = stream_socket_client(
-                $address,
-                $code,
-                $error,
-                0,
-                STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT,
-                $this->context
-            );
-        } else {
-            $socket = stream_socket_client(
-                $address,
-                $code,
-                $error,
-                0,
-                STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
-            );
-        }
+        $socket = $this->streamSocketClient($address, $code, $error);
         stream_set_blocking($socket, 0);
 
         if (!$socket && !is_resource($socket)) {
@@ -126,6 +108,14 @@ abstract class Connector extends Observable
         }
         $this->socket = $socket;
         return $socket;
+    }
+
+    protected function streamSocketClient($address, &$code = null, &$error = null, $flags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT)
+    {
+        if (is_resource($this->context)) {
+            return stream_socket_client($address, $code, $error, 0, $flags, $this->context);
+        }
+        return stream_socket_client($address, $code, $error, 0, $flags);
     }
 
     public function disconnect()

@@ -57,7 +57,14 @@ class Tls extends Tcp
         return parent::createSocketForAddress();
     }
 
-    
+    protected function streamSocketClient($address, &$code = null, &$error = null, $flags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT)
+    {
+        if (is_resource($this->context)) {
+            return stream_socket_client($address, $code, $error, $this->connectTimeout, $flags, $this->context);
+        }
+        return stream_socket_client($address, $code, $error, $this->connectTimeout, $flags);
+    }
+
     /**
      * @return string
      */
