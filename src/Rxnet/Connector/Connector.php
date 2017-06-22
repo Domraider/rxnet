@@ -101,11 +101,12 @@ abstract class Connector extends Observable
         }
         $address = $this->getSocketUrl($this->host, $this->port, $this->protocol);
         $socket = $this->streamSocketClient($address, $code, $error);
-        stream_set_blocking($socket, 0);
 
         if (!$socket && !is_resource($socket)) {
             throw new \Exception('Unable to create client socket : ' . $error);
         }
+        
+        stream_set_blocking($socket, 0);
         $this->socket = $socket;
         return $socket;
     }
