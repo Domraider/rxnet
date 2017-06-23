@@ -33,13 +33,26 @@ class Router implements ObserverInterface
      */
     public function route($route, $where = null)
     {
+        // je crée un UnbreakableSubject qui va gérer la route, c'est ce que je vais renvoyer à l'utilisateur en tant qu'observable seul
+        // je m'abonne au flux d'events interne 
+        // sur ce flux je vais recevoir des RoutableSubject me servant de lien avec l'adapter
+        // ces routable subject vont contenir un DataModel et vont être dans un état avec un payload spécifique
+        // si un event match la route je tranfert les éléments a mon UnbreakableSubject (onNext)
+        // au résultat de mon UnbreakableSubject j'abonne le sujet reçu pour lui evnvoyer le résultat, les erreurs, la fin de traitement
+        
+        // Comment remonter les erreurs au sujet principal
+        // Routable Subject > DataModel avec state (label+name) > Payload spécifique
+        // Subject = feedback adapteur > finis au niveau du router
+        // DataModel = relations, routage > dispatché à l'observable de la route 
+        // Payload = lecture simplifiée, normalisation > lu, transformé, funsionné .. par tout ce qui est décrit en dessous
+        // Action, Catcher, Mapper, Observables > Handlers
         $parser = new Std();
         $detail = $parser->parse($route);
 
         $routes = [];
         // TODO create custom subject to not dispose on error
         $observable = new Subject();
-
+        // Wait for observable to be 
         foreach ($detail as $routeData) {
             $b = $this->buildRegexForRoute($routeData);
             $regex = '~^(' . $b[0] . ')$~';
@@ -100,6 +113,7 @@ class Router implements ObserverInterface
                 $labels = array_merge($labels, $vars);
                 $value->setLabels($labels);
                 $subject->onNext($value);
+                $subject->subscribe($value);
                 return;
             }
         }
