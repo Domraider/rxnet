@@ -44,6 +44,11 @@ class YoloRouter implements \Rx\ObserverInterface
     }
 }
 
+/**
+ * Class YoloRoute
+ *
+ * @method \Rx\Observable loginHandler($value)
+ */
 class YoloRoute extends Route
 {
 
@@ -60,17 +65,18 @@ class YoloRoute extends Route
             throw new LogicException("{$name} has not been injected");
         }
         $closure = $this->$name;
+        //var_dump($params, $name);
         return $closure(current($params));
     }
 
     public function handle($i)
     {
-        return \Rx\Observable::start([$this, "loginHandler"])
+        return $this->loginHandler($i)
             ->catchError(function($e, $source) {
-                var_dump($source);
                 return $source;
-            })
-            ->flatMap([$this, "loginHandler"]);
+            });
+            //->flatMap([$this, "loginHandler"]);
+
         /*
         $this->loginHandler($dataModel)
             ->catchError(new DontThrowIfNotExistsCatcher())
