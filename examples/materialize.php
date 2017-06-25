@@ -7,14 +7,14 @@
  */
 require __DIR__ . "/../vendor/autoload.php";
 
-class YoloRouter implements \Rx\ObserverInterface
+class YoloRouter extends \Rx\Subject\ReplaySubject  implements \Rx\ObserverInterface
 {
     protected $routes = [];
 
-    public function __construct()
-    {
-    }
-
+    /**
+     * @param Route $route
+     * @return $this
+     */
     public function load(Route $route)
     {
         $this->routes[$route::ROUTE] = $route;
@@ -22,6 +22,7 @@ class YoloRouter implements \Rx\ObserverInterface
     }
 
     /**
+     * Optimistic guy
      * @param \Rxnet\Routing\RoutableSubject $value
      * @throws
      */
@@ -30,113 +31,18 @@ class YoloRouter implements \Rx\ObserverInterface
         if (!$handler = \Underscore\Types\Arrays::get($this->routes, $value->getName())) {
             throw new \Rxnet\Routing\RouteNotFoundException("{$value->getName()} does not exists");
         }
-        $handler($value);
-    }
-
-    public function onCompleted()
-    {
-        // TODO: Implement onCompleted() method.
-    }
-
-    public function onError(Exception $error)
-    {
-        // TODO: Implement onError() method.
-    }
-}
-
-/**
- * Class YoloRoute
- *
- * @method \Rx\Observable loginHandler($value)
- */
-class YoloRoute extends Route
-{
-
-    const ROUTE = '/yolo';
-    /** @var YoloHandler  */
-    private $loginHandler;
-
-    public function __construct(YoloHandler $loginHandler = null)
-    {
-        $this->loginHandler = $loginHandler;
-    }
-    public function __call($name, $params) {
-        if(!property_exists($this, $name)) {
-            throw new LogicException("{$name} has not been injected");
+        foreach ($this->observers as $observer) {
+            $value->subscribe($observer);
         }
-        $closure = $this->$name;
-        //var_dump($params, $name);
-        return $closure(current($params));
-    }
-
-    public function handle($i)
-    {
-        return $this->loginHandler($i)
-            ->catchError(function($e, $source) use($i) {
-                echo "Catch error \n";
-                return \Rx\Observable::just($i);
-            })
-            ->map(function($i) {
-                return $i+3;
-            });
-
-        /*
-        $this->loginHandler($dataModel)
-            ->catchError(new DontThrowIfNotExistsCatcher())
-            // payload generated automatically
-            ->map(
-                UserDataModel::factory()
-                    ->withState('/authentication/registered')
-                    // Json Schema
-                    ->withNormalizer(RegisteredUser::class)
-            )
-            // send back to source's event listener
-            ->doOnNext([$this->source, 'dispatchEvent'])
-            // generate token from user's data
-            ->flatMap($generateJsonWebToken)
-            // Cast to a given state
-            ->map(
-                UserDataModel::factory()
-                    ->withState('/authentication/connected-with-token')
-            );
-        */
-    }
-}
-
-class YoloHandler
-{
-    protected $add;
-
-    public function __construct($add = null)
-    {
-        $this->add = $add;
-    }
-    // Le handler ne s'occupe que du payload
-    // ça le rend agnostique à la route
-    // il prends une interface en entrée qui peut correspondre a x payloads
-    public function __invoke($payload)
-    {
-        return \Rx\Observable::just($payload+$this->add)
-            ->map(function($i) {
-                if($i%2) {
-                    throw new \Exception('Pair');
-                }
-                return $i;
-            });
-        /*
-        return $this->user->findByEmail($user->email)
-            ->map(function($existingUser) {
-                return $existingUser; // or throw
-            });
-        */
+        $handler($value);
     }
 }
 
 abstract class Route
 {
     const ROUTE = '/';
-
     /**
+     * Feedback is done here ! :)
      * @param $dataModel
      * @return \Rx\ObservableInterface
      */
@@ -148,7 +54,95 @@ abstract class Route
             ->flatMap([$this, 'handle'])
             ->subscribe($feedback);
     }
+
+    /**
+     * Magic for easy access to DI
+     * @param $name
+     * @param $params
+     * @return mixed
+     */
+    public function __call($name, $params) {
+        if(!property_exists($this, $name)) {
+            throw new LogicException("{$name} has not been injected");
+        }
+        $closure = $this->$name;
+        //var_dump($params, $name);
+        return $closure(current($params));
+    }
 }
+
+/**
+ * Class YoloRoute
+ *
+ * @method \Rx\Observable loginHandler($value)
+ */
+class YoloRoute extends Route
+{
+    // because it will never change !
+    const ROUTE = '/yolo';
+    /** @var YoloHandler  */
+    protected $loginHandler;
+
+    /**
+     * Dependency injection here
+     * can take time to write
+     * @param YoloHandler|null $loginHandler
+     */
+    public function __construct(YoloHandler $loginHandler)
+    {
+        $this->loginHandler = $loginHandler;
+    }
+
+    public function handle($i)
+    {
+        return $this->loginHandler($i)
+            ->catchError(function(\Exception $e) use($i) {
+                if($e instanceof \LogicException) {
+                    throw $e;
+                }
+                echo "Catch error \n";
+                return \Rx\Observable::just($i);
+            })
+            ->map(function($i) {
+                return $i+3;
+            });
+    }
+}
+
+class YoloHandler
+{
+    protected $add;
+
+    /**
+     * Dependency injection my friend
+     * can be a pain to write
+     * @param int $add
+     */
+    public function __construct($add = 1)
+    {
+        $this->add = $add;
+    }
+    /**
+     * Payload is an interface, so this handler can plug anywhere
+     *  it just have to give back an observable
+     * @param $payload
+     * @return \Rx\Observable\AnonymousObservable
+     */
+    public function __invoke($payload)
+    {
+        return \Rx\Observable::just($payload+$this->add)
+            ->map(function($i) {
+                if($i%2) {
+                    throw new \Exception('Pair');
+                }
+                if($i%11) {
+                    throw new \LogicException('11 !!');
+                }
+                return $i;
+            });
+    }
+}
+
 
 $loop = \EventLoop\EventLoop::getLoop();
 
@@ -162,7 +156,7 @@ $router->load(new YoloRoute(new YoloHandler(4)));
         $subject->subscribe(
             new \Rx\Observer\CallbackObserver(
                 function ($i) {
-                    echo "Yopi get next {$i} \n";
+                    echo "Youpi get next {$i} \n";
                 },
                 function (\Exception $e) {
                     echo "Ooops error {$e->getMessage()} \n";
