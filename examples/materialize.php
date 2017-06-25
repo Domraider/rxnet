@@ -72,10 +72,13 @@ class YoloRoute extends Route
     public function handle($i)
     {
         return $this->loginHandler($i)
-            ->catchError(function($e, $source) {
-                return $source;
+            ->catchError(function($e, $source) use($i) {
+                echo "Catch error \n";
+                return \Rx\Observable::just($i);
+            })
+            ->map(function($i) {
+                return $i+3;
             });
-            //->flatMap([$this, "loginHandler"]);
 
         /*
         $this->loginHandler($dataModel)
@@ -161,8 +164,8 @@ $router->load(new YoloRoute(new YoloHandler(4)));
                 function ($i) {
                     echo "Yopi get next {$i} \n";
                 },
-                function ($e) {
-                    echo "Ooops error \n";
+                function (\Exception $e) {
+                    echo "Ooops error {$e->getMessage()} \n";
                 },
                 function () {
                     echo "Job's done \n";
