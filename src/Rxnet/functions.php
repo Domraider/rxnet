@@ -55,7 +55,7 @@ function awaitToGenerator(Observable $observable, LoopInterface $loop = null)
     $loop = $loop ?: \EventLoop\getLoop();
     $scheduler = new EventLoopScheduler($loop);
     $observable->subscribe(new CallbackObserver(
-        function ($value) use (&$results, &$results, $loop) {
+        function ($value) use (&$results, $loop) {
             $results[] = $value;
         },
         function ($e) use (&$completed) {

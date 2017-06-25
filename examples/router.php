@@ -7,6 +7,8 @@ require __DIR__ . "/../vendor/autoload.php";
 $loop = EventLoop::getLoop();
 $router = new \Rxnet\Routing\Router();
 
+$req = "select id, data->'nested'->'youpi' from events where data @> '{\"coucou\":true}'";
+
 // I'll get id and title as labels
 $router->route("/articles/{id}/{title}", ['method'=>'get'])
     ->subscribeCallback(function (RoutableSubject $subject) use ($loop) {
@@ -32,6 +34,7 @@ $router->route("/articles/{id}/{title}", ['method'=>'post'])
         //var_dump(func_get_args());
     });
 */
+
 
 $zmq = new \Rxnet\Zmq\RxZmq($loop);
 $dealer = $zmq->dealer("tcp://127.0.0.1:8081");

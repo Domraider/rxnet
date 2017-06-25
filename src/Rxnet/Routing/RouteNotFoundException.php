@@ -9,7 +9,7 @@
 namespace Rxnet\Routing;
 
 
-use Rx\Exception\ExceptionWithLabels;
+use Rxnet\Exceptions\ExceptionWithLabels;
 
 class RouteNotFoundException extends ExceptionWithLabels
 {
