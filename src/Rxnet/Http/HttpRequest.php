@@ -4,6 +4,7 @@ namespace Rxnet\Http;
 use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
+use React\EventLoop\Timer\TimerInterface;
 use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
@@ -14,6 +15,8 @@ use Underscore\Types\Arrays;
 
 class HttpRequest extends Subject
 {
+    const HTTP_TIMEOUT_EXCEPTION_MESSAGE = 'Http Timeout';
+
     use NotifyObserverTrait;
     /**
      * @var string
@@ -36,18 +39,26 @@ class HttpRequest extends Subject
     protected $stream;
 
     protected $incompleteChunk = '';
-    protected $needMoreBytes = 0;
 
     protected $isStreamed = false;
+
+    /** @var float $timeout Timeout in seconds */
+    protected $timeout;
+
+    /** @var TimerInterface|null $timeoutTimer */
+    protected $timeoutTimer = null;
 
     /**
      * HttpRequest constructor.
      * @param Request $request
      * @param bool $streamed
+     * @param float $timeout
      */
-    public function __construct(Request $request, $streamed=false)
+    public function __construct(Request $request, $streamed=false, $timeout = 0)
     {
         $this->isStreamed = $streamed;
+        $this->timeout = $timeout;
+
         $body = $request->getBody()->getContents();
         if ($length = strlen($body)) {
             $request = $request->withHeader('Content-Length', $length);
@@ -69,7 +80,6 @@ class HttpRequest extends Subject
         } else {
             $req[] = '';
         }
-
 
         $this->data = implode("\r\n", $req);
 
@@ -120,6 +130,7 @@ class HttpRequest extends Subject
         // First event we are connected
         if ($event instanceof ConnectorEvent) {
             $this->__invoke($event);
+            $this->setupTimeout();
             return;
         }
         // It's surely a stream event with data
@@ -193,71 +204,52 @@ class HttpRequest extends Subject
      */
     public function parseChunk($data)
     {
-        //echo "get Data\n----\n";
-        //echo $data."\n----\n";
-        if ($this->needMoreBytes > 0) {
-            //echo "  Previous chunk was incomplete read {$this->needMoreBytes}\n";
-            // Previous chunk was incomplete take on new one what's needed
-            $chunk = substr($data, 0, $this->needMoreBytes);
-            // Keep rest of data if too long
-            $data = substr($data, $this->needMoreBytes);
-            $read = strlen($chunk);
-            $this->needMoreBytes -= $read;
-            $this->incompleteChunk .= $chunk;
+        $raw = $this->incompleteChunk . $data;
 
-            //echo "  We have read $read new octets, we need to read {$this->needMoreBytes} more octets\n";
-
-            // Chunk was completely managed, notify everybody if we are streaming
-            if ($this->needMoreBytes <= 0) {
-                // We got a full chunk
-                //echo " # Chunk is complete, leaving ".strlen($data)."octets for the next\n";
-                $this->chunkCompleted($this->incompleteChunk);
-                $this->incompleteChunk = '';
-            }
-            if (!$data) {
-                return;
-            }
-        }
         // Detect if we have the http end in this data
-        if (($end = strpos($data, "0\r\n\r\n")) !== false) {
-            $data = substr($data, 0, $end);
-        }
+        $end = strpos($raw, "0\r\n\r\n") !== false;
+
         // Search for control octets in the mess (yes some are messy)
-        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $data, $matches);
+        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $raw, $matches);
 
         // No chunk limiters it's an incomplete one
         if (!$end && !$matches[0]) {
             $this->incompleteChunk .= $data;
-            $this->needMoreBytes -= strlen($data);
             return;
         }
 
         foreach ($matches[0] as $k => $control) {
+            $controlLength = strlen($control);
             // Search control position with it's \r\n in string
-            $controlPos = strpos($data, $control) + strlen($control);
+            $controlPos = strpos($raw, $control) + $controlLength;
             // Get control hexdec
             $control = rtrim(trim($control));
             // Extract chunk length from control
             $chunkLength = hexdec($control);
             // Extract from data the chunk
-            $chunk = substr($data, $controlPos, $chunkLength);
+            $chunk = substr($raw, $controlPos, $chunkLength);
             $chunkRealLength = strlen($chunk);
 
             //echo "Control {$control} is at pos {$controlPos} and has {$chunkLength} data\n";
 
             // Chunk is too small for length explained, wait for next packet
             if ($chunkRealLength < $chunkLength) {
-                $this->needMoreBytes = $chunkLength - $chunkRealLength;
                 $this->incompleteChunk .= $chunk;
-                //echo "  chunk is incomplete we need to read {$this->needMoreBytes} more octets\n";
 
                 if (!$end) {
-                    continue;
+                    break;
                 }
             }
             // Chunk is perfect add it to buffer
             $this->chunkCompleted($chunk);
+            $raw = substr($raw, $chunkLength + $controlLength);
+            if (false === $raw) {
+                $raw = '';
+            }
         }
+
+        $this->incompleteChunk = $raw;
+
         if ($end) {
             $this->completed();
         }
@@ -268,6 +260,11 @@ class HttpRequest extends Subject
      */
     public function completed()
     {
+        if ($this->timeoutTimer instanceof TimerInterface && $this->timeoutTimer->isActive()) {
+            $this->timeoutTimer->cancel();
+            $this->timeoutTimer = null;
+        }
+
         //echo '#';
         $response = new Response($this->response->getStatusCode(), $this->response->getHeaders(), $this->buffer);
         foreach ($this->observers as $observer) {
@@ -282,6 +279,19 @@ class HttpRequest extends Subject
     public function __toString()
     {
         return $this->data;
+    }
+
+    protected function setupTimeout()
+    {
+        if ($this->timeout > 0) {
+            $this->timeoutTimer = EventLoop::getLoop()
+                ->addTimer($this->timeout, function() {
+                    if (!$this->isDisposed()) {
+                        $this->onError(new \Exception(self::HTTP_TIMEOUT_EXCEPTION_MESSAGE));
+                        $this->dispose();
+                    }
+                });
+        }
     }
 
 }

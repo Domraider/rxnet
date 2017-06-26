@@ -14,6 +14,7 @@ class HttpdResponse extends Observable
     protected $chunkedEncoding = true;
     protected $conn;
     public $labels = [];
+    protected $ended = false;
 
     /**
      * HttpdResponse constructor.
@@ -24,6 +25,11 @@ class HttpdResponse extends Observable
     {
         $this->conn = $conn;
         $this->labels = $labels;
+    }
+
+    public function isEnded()
+    {
+        return $this->ended;
     }
 
     /**
@@ -175,5 +181,7 @@ class HttpdResponse extends Observable
         }
         $this->notifyNext(new Event("/httpd/response/written", $this, $this->labels));
         $this->conn->end();
+
+        $this->ended = true;
     }
 }

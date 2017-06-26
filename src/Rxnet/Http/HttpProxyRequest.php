@@ -9,7 +9,6 @@ use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
-use Rxnet\Observer\StdOutObserver;
 use Rxnet\Stream\StreamEvent;
 use Rxnet\Transport\FilterableStream;
 
@@ -36,7 +35,7 @@ class HttpProxyRequest extends Subject
     protected $toggleCrypto = false;
 
 
-    public function __construct(Request $request, $proxy, $toggleCrypto = false)
+    public function __construct(Request $request, $proxy, $toggleCrypto = false, $timeout = 0)
     {
         if (!$port = $request->getUri()->getPort()) {
             $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
@@ -49,7 +48,7 @@ class HttpProxyRequest extends Subject
             $headers[] = "Proxy-Authorization: Basic " . base64_encode("{$proxy['user']}:{$proxy['pass']}");
         }
         $this->data = implode("\r\n", $headers) . "\r\n\r\n\r\n";
-        $this->request = new HttpRequest($request);
+        $this->request = new HttpRequest($request, false, $timeout);
         $this->toggleCrypto = $toggleCrypto;
     }
 
@@ -159,10 +158,6 @@ class HttpProxyRequest extends Subject
                 // handshake failed
                 // Error handler should have done the work
                 break;
-            }
-            else {
-                // let's loop until handshake is ok
-                $loop->tick();
             }
         }
         restore_error_handler();

@@ -58,6 +58,7 @@ class RabbitExchange
     {
         $this->channel = $channel;
     }
+
     /**
      * @param $data
      * @param $routingKey
@@ -73,6 +74,22 @@ class RabbitExchange
 
         $promise = $this->channel->publish($this->serializer->serialize($data), $headers, $this->exchange, $routingKey);
         return \Rxnet\fromPromise($promise);
+    }
+
+    /**
+     * @param EventInterface $event
+     * @param $routingKey
+     * @param array $headers
+     * @param int $delivery
+     * @return Observable
+     */
+    public function produceEvent(EventInterface $event, $routingKey, $headers = [], $delivery = self::DELIVERY_DISK)
+    {
+        $labels = $event->getLabels();
+        $labels['name'] = $event->getName();
+        $headers[RabbitMessage::HEADER_LABELS] = \GuzzleHttp\json_encode($labels);
+
+        return $this->produce($event->getData(), $routingKey, $headers, $delivery);
     }
 
     /**

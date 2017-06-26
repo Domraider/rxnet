@@ -13,6 +13,8 @@ use Rx\Observable;
  */
 abstract class Connector extends Observable
 {
+    const CONNECT_TIMEOUT_EXCEPTION_MESSAGE = 'Connect Timeout';
+
     use NotifyObserverTrait;
     /**
      * @var LibEvLoop
@@ -41,9 +43,13 @@ abstract class Connector extends Observable
     protected $labels = [];
     protected $socket;
 
+    /** @var  float $connectTimeout Timeout in seconds */
+    protected $connectTimeout = 0;
+
     /**
      * Connector constructor.
      * @param LoopInterface $loop
+     * @param int $timeout
      */
     public function __construct(LoopInterface $loop)
     {
@@ -62,6 +68,7 @@ abstract class Connector extends Observable
     /**
      * @param $host
      * @param bool|false $port
+     * @param int $connectTimeout Timeout in ms
      * @return Observable|Observable\ErrorObservable
      */
     public function connect($host, $port = false)
@@ -77,6 +84,12 @@ abstract class Connector extends Observable
         }
     }
 
+    public function setTimeout($connectTimeout)
+    {
+        $this->connectTimeout = $connectTimeout;
+        return $this;
+    }
+
     /**
      * @return resource
      * @throws Exception
@@ -87,32 +100,23 @@ abstract class Connector extends Observable
             $this->context = stream_context_create($this->contextParams);
         }
         $address = $this->getSocketUrl($this->host, $this->port, $this->protocol);
-
-        if ($this->context) {
-            $socket = stream_socket_client(
-                $address,
-                $code,
-                $error,
-                0,
-                STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT,
-                $this->context
-            );
-        } else {
-            $socket = stream_socket_client(
-                $address,
-                $code,
-                $error,
-                0,
-                STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT
-            );
-        }
-        stream_set_blocking($socket, 0);
+        $socket = $this->streamSocketClient($address, $code, $error);
 
         if (!$socket && !is_resource($socket)) {
             throw new \Exception('Unable to create client socket : ' . $error);
         }
+        
+        stream_set_blocking($socket, 0);
         $this->socket = $socket;
         return $socket;
+    }
+
+    protected function streamSocketClient($address, &$code = null, &$error = null, $flags = STREAM_CLIENT_CONNECT | STREAM_CLIENT_ASYNC_CONNECT)
+    {
+        if (is_resource($this->context)) {
+            return stream_socket_client($address, $code, $error, 0, $flags, $this->context);
+        }
+        return stream_socket_client($address, $code, $error, 0, $flags);
     }
 
     public function disconnect()
@@ -139,5 +143,6 @@ abstract class Connector extends Observable
 
         return sprintf('%s://%s:%s', $protocol, $ip, $port);
     }
+
 
 }

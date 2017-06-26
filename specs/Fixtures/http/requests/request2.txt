@@ -1,0 +1,18 @@
+HTTP/1.1 200 OK
+Server: nginx/1.10.0 (Ubuntu)
+Date: Thu, 09 Mar 2017 10:41:24 GMT
+Content-Type: text/xml;charset=UTF-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Expires: 0
+Cache-Control: no-cache
+X-Powered-By: Undertow/1
+Pragma: no-cache
+Content-Language: en
+
+147
+{"Code":"OK","ErrorMessage":"","FullError":"","FirstBackLinkDate":"2016-06-12","IndexBuildDate":"2016-09-13 08:42:07","IndexType":1,"MostRecentBackLinkDate":"2016-09-11","ServerBuild":"2016-09-10 19:18:54","ServerName":"JAYPOUND","ServerVersion":"1.0.6097.32967","UniqueIndexID":"20160913084207-FRESH","DataTables":{"Results":{
+aac
+"Headers":{"MaxTopicsRootDomain":30,"MaxTopicsSubDomain":20,"MaxTopicsURL":10,"TopicsCount":30},"Data":[{"ItemNum":0,"Item":"toulonpromotions.fr","ResultCode":"OK","Status":"Found","ExtBackLinks":0,"RefDomains":0,"AnalysisResUnitsCost":0,"ACRank":-1,"ItemType":1,"IndexedURLs":2,"GetTopBackLinksAnalysisResUnitsCost":5000,"DownloadBacklinksAnalysisResUnitsCost":25000,"DownloadRefDomainBacklinksAnalysisResUnitsCost":25000,"RefIPs":0,"RefSubNets":0,"RefDomainsEDU":0,"ExtBackLinksEDU":0,"RefDomainsGOV":0,"ExtBackLinksGOV":0,"RefDomainsEDU_Exact":0,"ExtBackLinksEDU_Exact":0,"RefDomainsGOV_Exact":0,"ExtBackLinksGOV_Exact":0,"CrawledFlag":"False","LastCrawlDate":"","LastCrawlResult":"","RedirectFlag":"False","FinalRedirectResult":"","OutDomainsExternal":0,"OutLinksExternal":0,"OutLinksInternal":0,"LastSeen":"","Title":"","RedirectTo":"","CitationFlow":0,"TrustFlow":0,"TrustMetric":0,"TopicalTrustFlow_Topic_0":"","TopicalTrustFlow_Value_0":"","TopicalTrustFlow_Topic_1":"","TopicalTrustFlow_Value_1":"","TopicalTrustFlow_Topic_2":"","TopicalTrustFlow_Value_2":"","TopicalTrustFlow_Topic_3":"","TopicalTrustFlow_Value_3":"","TopicalTrustFlow_Topic_4":"","TopicalTrustFlow_Value_4":"","TopicalTrustFlow_Topic_5":"","TopicalTrustFlow_Value_5":"","TopicalTrustFlow_Topic_6":"","TopicalTrustFlow_Value_6":"","TopicalTrustFlow_Topic_7":"","TopicalTrustFlow_Value_7":"","TopicalTrustFlow_Topic_8":"","TopicalTrustFlow_Value_8":"","TopicalTrustFlow_Topic_9":"","TopicalTrustFlow_Value_9":"","TopicalTrustFlow_Topic_10":"","TopicalTrustFlow_Value_10":"","TopicalTrustFlow_Topic_11":"","TopicalTrustFlow_Value_11":"","TopicalTrustFlow_Topic_12":"","TopicalTrustFlow_Value_12":"","TopicalTrustFlow_Topic_13":"","TopicalTrustFlow_Value_13":"","TopicalTrustFlow_Topic_14":"","TopicalTrustFlow_Value_14":"","TopicalTrustFlow_Topic_15":"","TopicalTrustFlow_Value_15":"","TopicalTrustFlow_Topic_16":"","TopicalTrustFlow_Value_16":"","TopicalTrustFlow_Topic_17":"","TopicalTrustFlow_Value_17":"","TopicalTrustFlow_Topic_18":"","TopicalTrustFlow_Value_18":"","TopicalTrustFlow_Topic_19":"","TopicalTrustFlow_Value_19":"","TopicalTrustFlow_Topic_20":"","TopicalTrustFlow_Value_20":"","TopicalTrustFlow_Topic_21":"","TopicalTrustFlow_Value_21":"","TopicalTrustFlow_Topic_22":"","TopicalTrustFlow_Value_22":"","TopicalTrustFlow_Topic_23":"","TopicalTrustFlow_Value_23":"","TopicalTrustFlow_Topic_24":"","TopicalTrustFlow_Value_24":"","TopicalTrustFlow_Topic_25":"","TopicalTrustFlow_Value_25":"","TopicalTrustFlow_Topic_26":"","TopicalTrustFlow_Value_26":"","TopicalTrustFlow_Topic_27":"","TopicalTrustFlow_Value_27":"","TopicalTrustFlow_Topic_28":"","TopicalTrustFlow_Value_28":"","TopicalTrustFlow_Topic_29":"","TopicalTrustFlow_Value_29":""}]}}}
+0
+

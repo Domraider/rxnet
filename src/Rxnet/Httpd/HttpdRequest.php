@@ -103,7 +103,7 @@ class HttpdRequest extends Observable
     {
         $psrHeader =  $this->request->getHeader($header);
 
-            return null === $psrHeader ? null : strtolower(reset($psrHeader));
+            return null === $psrHeader ? null : reset($psrHeader);
     }
 
     /**

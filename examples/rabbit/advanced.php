@@ -22,7 +22,7 @@ $debug = new StdOutObserver();
 // Consume with a specified id
 $queue->consume('consumer-2')
     ->subscribeCallback(function (RabbitMessage $message) use ($debug) {
-        $subject = new RoutableSubject($message->getRoutingKey(), $message->getData(), $message->getLabels());
+        $subject = new RoutableSubject($message->routingKey, $message->getData(), $message->getLabels());
         // Everything that append will be to my logger
         $subject->subscribe($debug);
         // Give 30s to handle the subject or reject it to bottom (with all its changes)

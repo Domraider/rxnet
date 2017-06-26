@@ -15,7 +15,7 @@ interface OnDemandInterface
     public function getObservable();
 
     /**
-     * @return mixed
+     * @return void
      */
     public function cleanup();
 }

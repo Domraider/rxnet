@@ -3,7 +3,12 @@ namespace Rxnet\Http;
 
 
 use EventLoop\EventLoop;
+use GuzzleHttp\Cookie\CookieJar;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Response;
+use Rx\Disposable\CallbackDisposable;
+use GuzzleHttp\Psr7\Uri;
+use GuzzleHttp\Psr7\UriResolver;
 use Rx\DisposableInterface;
 use Rx\ObserverInterface;
 use Rxnet\Dns\Dns;
@@ -12,6 +17,7 @@ use Rxnet\Connector\Tcp;
 use Rxnet\Connector\Tls;
 use Rxnet\Event\ConnectorEvent;
 use Rxnet\Event\Event;
+use Rxnet\Exceptions\RedirectionLoopException;
 use Rxnet\Middleware\MiddlewareInterface;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
@@ -44,6 +50,10 @@ class Http extends Observable
      * @var Dns
      */
     protected $dns;
+    /**
+     * @var null|CookieJar[]
+     */
+    protected $cookieJar = null;
 
     public function __construct(EndlessSubject $observable = null, Dns $dns = null)
     {
@@ -60,7 +70,7 @@ class Http extends Observable
      * @return Observable
      * @throws \InvalidArgumentException
      */
-    public function __call($name, array $args = [])
+    public function __call($name, array $args)
     {
         $method = strtoupper($name);
         if (!in_array($method, ['GET', 'POST', 'HEAD', 'PUT', 'PATCH', 'DELETE'], true)) {
@@ -68,6 +78,21 @@ class Http extends Observable
         }
         array_unshift($args, $method);
         return call_user_func_array([$this, 'request'], $args);
+    }
+
+    public function useCookies()
+    {
+        $this->cookieJar = [];
+    }
+
+    public function hasCookieJar($proxy = null)
+    {
+        return isset($this->cookieJar[$proxy ?: 'no_proxy']);
+    }
+
+    public function getCookieJar($proxy = null)
+    {
+        return $this->hasCookieJar($proxy) ? $this->cookieJar[$proxy ?: 'no_proxy'] : null;
     }
 
     /**
@@ -109,15 +134,79 @@ class Http extends Observable
             }
             $request = $request->withUri($uri);
         }
-        if ($proxy = @Arrays::get($opts, 'proxy')) {
-            if (is_string($proxy)) {
-                $proxy = parse_url($proxy);
+
+        $proxy = @Arrays::get($opts, 'proxy');
+        $allowRedirects = Arrays::get($opts, 'allow_redirects', false);
+
+        // set cookies
+        if (null !== $this->cookieJar) {
+            if (!isset($this->cookieJar[$proxy ?: 'no_proxy'])) {
+                $this->cookieJar[$proxy ?: 'no_proxy'] = new CookieJar();
             }
-            $req = $this->requestRawWithProxy($request, $proxy, $opts);
+            $request = $this->cookieJar[$proxy ?: 'no_proxy']->withCookieHeader($request);
+        }
+
+        if ($proxy) {
+            $realProxy = $proxy;
+            if (is_string($realProxy)) {
+                $realProxy = parse_url($realProxy);
+            }
+            $req = $this->requestRawWithProxy($request, $realProxy, $opts);
         } else {
             $req = $this->requestRaw($request, $opts);
         }
-        return $req;
+
+        if ($allowRedirects) {
+            if (!is_array($allowRedirects)) {
+                $allowRedirects = [
+                    'max' => 5,
+                ];
+            } else {
+                $allowRedirects = array_merge(
+                    [
+                        'max' => 5,
+                    ],
+                    $allowRedirects
+                );
+            }
+
+            if (!isset($opts['__redirect_count'])) {
+                $opts['__redirect_count'] = 0;
+            }
+
+            // manage redirect
+            $req = $req->flatMap(function (Response $response) use ($request, $method, $opts, $allowRedirects) {
+                $code = $response->getStatusCode();
+                if ($code < 300 || $code >= 400) {
+                    return Observable::just($response);
+                }
+
+                $locationHeader = current($response->getHeader("Location"));
+                if (!$locationHeader) {
+                    return Observable::just($response);
+                }
+
+                $opts['__redirect_count']++;
+                if ($opts['__redirect_count'] > $allowRedirects['max']) {
+                    throw new RedirectionLoopException($allowRedirects['max']);
+                }
+
+                $uri = UriResolver::resolve(
+                    $request->getUri(),
+                    new Uri($locationHeader)
+                );
+
+                return $this->request($method, $uri, $opts);
+            });
+        }
+
+        return $req
+            ->map(function (Response $response) use ($request, $proxy) {
+                if (null !== $this->cookieJar) {
+                    $this->cookieJar[$proxy ?: 'no_proxy']->extractCookies($request, $response);
+                }
+                return $response;
+            });
     }
 
     /**
@@ -128,22 +217,30 @@ class Http extends Observable
      */
     public function requestRawWithProxy(Request $request, $proxy, array $opts = [])
     {
-        return Observable::create(function(ObserverInterface $observer)  use($request, $opts, $proxy) {
+        return Observable::create(function(ObserverInterface $observer)  use ($request, $opts, $proxy) {
             $streamed = Arrays::get($opts, 'stream', false);
-            $req = new HttpRequest($request, $streamed);
 
-            $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'));
+            $connectTimeout = Arrays::get($opts, 'connect_timeout', 0);
+            $timeout = Arrays::get($opts, 'timeout', 0);
+            $req = new HttpRequest($request, $streamed, $timeout);
+
+            $proxyRequest = new HttpProxyRequest($request, $proxy, ($request->getUri()->getScheme() === 'https'), $timeout);
             $proxyRequest->subscribe($req);
 
-            $this->dns->resolve($proxy['host'])
-                ->flatMap(
-                    function ($ip) use ($proxy, $opts, $request) {
-                        return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
-                            ->connect($ip, $proxy['port']);
-                    })
+            $disposable = $this->dns
+                ->resolve($proxy['host'])
+                ->flatMap(function ($ip) use ($proxy, $opts, $request, $connectTimeout) {
+                    return $this
+                        ->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
+                        ->setTimeout($connectTimeout)
+                        ->connect($ip, $proxy['port']);
+                })
                 ->subscribe($proxyRequest);
 
             $req->subscribe($observer);
+            return new CallbackDisposable(function() use ($disposable) {
+                $disposable->dispose();
+            });
         });
     }
 
@@ -162,26 +259,32 @@ class Http extends Observable
             }
 
             $streamed = Arrays::get($opts, 'stream', false);
-            $req = new HttpRequest($request, $streamed);
+            $connectTimeout = Arrays::get($opts, 'connect_timeout', 0);
+            $timeout = Arrays::get($opts, 'timeout', 0);
+            $req = new HttpRequest($request, $streamed, $timeout);
 
-            $this->dns->resolve($request->getUri()->getHost())
-                ->flatMap(
-                    function ($ip) use ($scheme, $opts, $port, $request) {
-                        return
-                            $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
-                                ->connect($ip, $port)
-                                ->map(function (Event $e) {
-                                    if ($e instanceof ConnectorEvent) {
-                                        $stream = $e->data;
-                                        $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
-                                        return new ConnectorEvent($e->name, $bufferedStream, $e->labels, $e->getPriority());
-                                    }
-                                    return $e;
-                                });
-                    })
+            $disposable = $this->dns
+                ->resolve($request->getUri()->getHost())
+                ->flatMap(function ($ip) use ($scheme, $opts, $port, $request, $connectTimeout) {
+                    return $this
+                        ->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
+                        ->setTimeout($connectTimeout)
+                        ->connect($ip, $port)
+                        ->map(function (Event $e) {
+                            if ($e instanceof ConnectorEvent) {
+                                $stream = $e->data;
+                                $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
+                                return new ConnectorEvent($e->name, $bufferedStream, $e->labels, $e->getPriority());
+                            }
+                            return $e;
+                        });
+                })
                 ->subscribe($req);
 
             $req->subscribe($observer);
+            return new CallbackDisposable(function() use ($disposable) {
+                $disposable->dispose();
+            });
         });
     }
 
@@ -190,16 +293,21 @@ class Http extends Observable
      * @param array $opts
      * @return Tcp|Tls
      */
-    public function getConnector($scheme, $hostName, array $opts = []) {
-        if($scheme == 'http') {
-            return new Tcp($this->loop);
+    public function getConnector($scheme, $hostName, array $opts = [])
+    {
+        if ($scheme == 'http') {
+            $connector = new Tcp($this->loop);
+        } else {
+            $connector = new Tls($this->loop);
+            if ($sslOpts = Arrays::get($opts, 'ssl')) {
+                $connector->setSslContextParams($sslOpts);
+            }
+            $connector->setHostName($hostName);
         }
-        $connector = new Tls($this->loop);
-        if($sslOpts = Arrays::get($opts, 'ssl')) {
-            $connector->setSslContextParams($sslOpts);
-        }
-        $connector->setHostName($hostName);
 
+        if ($bindTo = Arrays::get($opts, 'bindto')) {
+            $connector->bindTo($bindTo);
+        }
         return $connector;
     }
 

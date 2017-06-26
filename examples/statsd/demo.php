@@ -22,7 +22,8 @@ $req2 = $statsd->increment("database.query.count");
 $req3 = $statsd->histogram("database.query.time", 0.420);
 
 
-Observable::mergeAll(Observable::fromArray([$req1, $req2, $req3]))
+Observable::fromArray([$req1, $req2, $req3])
+    ->mergeAll()
     ->subscribe(new StdOutObserver(), new EventLoopScheduler($loop));
 
 $loop->run();

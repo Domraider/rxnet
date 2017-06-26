@@ -1,12 +1,14 @@
 <?php
 namespace Rxnet\Contract;
 
-
 use Underscore\Types\Arrays;
 
 trait EventTrait
 {
-    public function setName($name) {
+    use HasLabelsTrait;
+
+    public function setName($name)
+    {
         $this->name = $name;
     }
     
@@ -37,36 +39,13 @@ trait EventTrait
     {
         return fnmatch($pattern, $this->name, FNM_CASEFOLD);
     }
-    /**
-     * @param $key
-     * @param $value
-     * @return bool
-     */
-    public function hasLabel($key, $value = null)
-    {
-        if(!$value) {
-            return (bool) isset($this->labels[$key]);
-        }
-        return boolval((isset($this->labels[$key]) ? $this->labels[$key] : false) === $value);
-    }
-
-    /**
-     * @param $key
-     * @return mixed
-     */
-    public function getLabel($key = null)
-    {
-        if(!$key) {
-            return $this->labels;
-        }
-        return isset($this->labels[$key]) ? $this->labels[$key] : null;
-    }
 
     public function getData($key = null)
     {
         if (null !== $key) {
             return Arrays::get($this->data, $key);
         }
+
         return $this->data;
     }
 

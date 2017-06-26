@@ -204,7 +204,7 @@ class Redis extends Subject
      * @param $arguments
      * @return AnonymousObservable
      */
-    public function __call($name, array $arguments = [])
+    public function __call($name, array $arguments)
     {
         $promise = $this->client->__call($name, $arguments);
 

@@ -9,15 +9,29 @@ use Underscore\Types\Arrays;
 
 class RabbitMessage
 {
+    /** @var string */
+    public $consumerTag;
+    /** @var int */
+    public $deliveryTag;
+    /** @var boolean */
+    public $redelivered;
+    /** @var string */
+    public $exchange;
+    /** @var string */
+    public $routingKey;
+    /** @var array */
+    public $headers;
+
     protected $channel;
     protected $serializer;
     protected $message;
     protected $trait;
 
-    protected $name;
-    protected $routingKey;
     protected $data;
     protected $labels = [];
+
+    const HEADER_TRIED = 'tried';
+    const HEADER_LABELS = 'labels';
 
     /**
      * RabbitMessage constructor.
@@ -31,12 +45,23 @@ class RabbitMessage
         $this->message = $message;
         $this->serializer = $serializer;
 
-        $this->data = $serializer->unserialize($message->content);
+        $this->consumerTag = $message->consumerTag;
+        $this->deliveryTag = $message->deliveryTag;
+        $this->redelivered = $message->redelivered;
+        $this->exchange = $message->exchange;
         $this->routingKey = $message->routingKey;
-        $this->labels = $message->headers;
-        $this->labels['retried'] = $message->deliveryTag;
-        $this->labels['exchange'] = $message->exchange;
+        $this->headers = $message->headers;
 
+        $this->headers[self::HEADER_TRIED] = isset($this->headers[self::HEADER_TRIED]) ? $this->headers[self::HEADER_TRIED]+1 : 1;
+
+        $this->data = $serializer->unserialize($message->content);
+
+        $this->labels = Arrays::get($this->headers, self::HEADER_LABELS, '[]');
+        try {
+            $this->labels = \GuzzleHttp\json_decode($this->labels, true) ?: [];
+        } catch (\InvalidArgumentException $e) {
+            $this->labels = [];
+        }
     }
 
     /**
@@ -48,6 +73,15 @@ class RabbitMessage
     }
 
     /**
+     * @return string
+     */
+    public function getDeliveryTag()
+    {
+        return $this->routingKey;
+    }
+
+    /**
+     * @deprecated must use getDataClone
      * @return mixed
      */
     public function getData()
@@ -56,11 +90,57 @@ class RabbitMessage
     }
 
     /**
+     * @return mixed
+     */
+    public function getDataClone()
+    {
+        return $this->serializer->unserialize($this->message->content);
+    }
+
+    /**
+     * @param $header
+     * @param null $default
+     * @return mixed
+     */
+    public function getHeader($header, $default = null)
+    {
+        return Arrays::get($this->headers, $header, $default);
+    }
+
+    /**
      * @return array
      */
     public function getLabels()
     {
         return $this->labels;
+    }
+
+    /**
+     * @param $label
+     * @param null $default
+     * @return mixed
+     */
+    public function getLabel($label, $default = null)
+    {
+        return Arrays::get($this->labels, $label, $default);
+    }
+
+    /**
+     * @param $label
+     * @param $value
+     * @return mixed
+     */
+    public function setLabel($label, $value)
+    {
+        $this->labels = Arrays::set($this->labels, $label, $value);
+    }
+
+    /**
+     * @return string
+     */
+    public function getRawContent()
+    {
+        return $this->message->content;
     }
 
     /**
@@ -93,41 +173,61 @@ class RabbitMessage
         return \Rxnet\fromPromise($promise);
     }
 
+    protected function prepareHeaders($additionalHeaders = [])
+    {
+        $headers = $this->headers;
+        if (isset($headers[self::HEADER_LABELS]) ) {
+            unset($headers[self::HEADER_LABELS]);
+        }
+        if ($this->labels) {
+            $headers[self::HEADER_LABELS] = \GuzzleHttp\json_encode($this->labels);
+        }
+
+        return array_merge(
+            $headers,
+            $additionalHeaders
+        );
+    }
+
     /**
      * @param $delay
      * @param string $exchange
-     * @return Observable\AnonymousObservable
+     * @param array|null $data
+     * @return Observable
      */
-    public function retryLater($delay, $exchange = 'direct.delayed')
+    public function retryLater($delay, $exchange = 'direct.delayed', $data = null)
     {
-        $headers = Arrays::without($this->labels, 'retried', 'exchange');
-        $headers = array_merge($headers, ['x-delay' => $delay]);
+        $headers = $this->prepareHeaders(['x-delay' => $delay]);
 
         return $this->reject(false)
-            ->flatMap(function () use ($headers, $exchange) {
-                return $this->channel->publish(
-                    $this->serializer->serialize($this->data),
-                    $headers,
-                    $this->getLabel('exchange'),
-                    $this->name
+            ->flatMap(function () use ($data, $headers, $exchange) {
+                return \Rxnet\fromPromise(
+                    $this->channel->publish(
+                        $this->serializer->serialize($data === null ? $this->getData() : $data),
+                        $headers,
+                        $exchange,
+                        $this->routingKey
+                    )
                 );
             });
     }
 
     /**
-     * @return Observable\AnonymousObservable
+     * @param array|null $data
+     * @return Observable
      */
-    public function rejectToBottom()
+    public function rejectToBottom($data = null)
     {
         return $this->reject(false)
-            ->flatMap(function () {
-                return $this->channel->publish(
-                    $this->serializer->serialize($this->data),
-                    Arrays::without($this->labels, 'retried', 'exchange'),
-                    $this->getLabel('exchange'),
-                    $this->name
+            ->flatMap(function () use ($data) {
+                return \Rxnet\fromPromise(
+                    $this->channel->publish(
+                        $this->serializer->serialize($data === null ? $this->getData() : $data),
+                        $this->prepareHeaders(),
+                        $this->exchange,
+                        $this->routingKey
+                    )
                 );
             });
     }
-
 }

@@ -202,7 +202,7 @@ class Statsd
                 }
                 return $this->reportMetric("$stat:$value");
             });
-        return Observable::mergeAll($observableSequence);
+        return $observableSequence->mergeAll();
     }
 
     /**

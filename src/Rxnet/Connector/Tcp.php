@@ -1,6 +1,8 @@
 <?php
 namespace Rxnet\Connector;
 
+use EventLoop\EventLoop;
+use React\EventLoop\Timer\TimerInterface;
 use React\Socket\ConnectionException;
 use Rx\Disposable\CallbackDisposable;
 use Rx\Observable;
@@ -20,6 +22,7 @@ class Tcp extends Connector
             "verify_peer_name" => false,
         ],
     ];
+
     /**
      * @return Observable\AnonymousObservable
      * @throws \Exception
@@ -30,15 +33,31 @@ class Tcp extends Connector
 
         // Wait TCP handshake
         return Observable::create(function(ObserverInterface $observer) use($socket) {
-            $this->loop->addWriteStream($socket, function($socket) use($observer) {
-                $this->onConnected($socket, $observer);
-            });
-            return new CallbackDisposable(function() use($socket, $observer) {
+
+            $closeSocket = function() use($socket, $observer) {
                 $this->loop->removeStream($socket);
                 if(is_resource($socket)) {
                     fclose($socket);
                 }
+            };
+
+            $timer = null;
+            if ($this->connectTimeout > 0) {
+                $timer = EventLoop::getLoop()
+                    ->addTimer($this->connectTimeout, function () use ($observer, $closeSocket) {
+                        $closeSocket();
+                        $observer->onError(new \Exception(self::CONNECT_TIMEOUT_EXCEPTION_MESSAGE));
+                    });
+            }
+
+            $this->loop->addWriteStream($socket, function($socket) use($observer, $timer) {
+                if (isset($timer) && $timer->isActive()) {
+                    $timer->cancel();
+                }
+                $this->onConnected($socket, $observer);
             });
+
+            return new CallbackDisposable($closeSocket);
         });
     }
 
@@ -50,12 +69,10 @@ class Tcp extends Connector
     {
         $this->loop->removeWriteStream($socket);
         if (false === stream_socket_get_name($socket, true)) {
-            $observer->onError(new ConnectionException('Connection refused'));
+            $observer->onError(new ConnectionException(sprintf('Connection refused on %s://%s:%s', $this->protocol, $this->host, $this->port)));
             $observer->onCompleted();
             return;
         }
         $observer->onNext(new ConnectorEvent("/connector/connected", new Stream($socket, $this->loop), $this->labels));
-        //$observer->onCompleted();
     }
-
 }
