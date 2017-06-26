@@ -18,9 +18,9 @@ class DataModel implements RoutableInterface, PayloadInterface
         $this->labels = $labels;
     }
 
-    public function factory()
+    public static function factory()
     {
-        return new DataModelFactory();
+        return new DataModelFactory(self::class);
     }
 
     public function getPayload()
@@ -42,7 +42,9 @@ class DataModel implements RoutableInterface, PayloadInterface
     {
         return new self($this->state, $payload, $this->labels);
     }
-    public function withLabels($labels) {
+
+    public function withLabels($labels)
+    {
         return new self($this->state, $this->payload, $labels);
     }
 

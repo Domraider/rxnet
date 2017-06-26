@@ -30,7 +30,12 @@ class YoloRoute extends \Rxnet\Routing\Route
 
     public function handle(\Rxnet\Routing\DataModel $dataModel)
     {
-        return $this->yoloHandler($dataModel)
+        return \Rx\Observable::just($dataModel)
+            ->map(
+                \Rxnet\Routing\DataModel::factory()
+                    ->withNormalizer(YoloPayload::class)
+            )
+            ->flatMap([$this, 'yoloHandler'])
             ->catchError(function (\Exception $e) use ($dataModel) {
                 if ($e instanceof \LogicException) {
                     throw $e;
@@ -82,6 +87,10 @@ class YoloHandler extends \Rxnet\Routing\Handlers\RouteHandler
     }
 }
 
+class YoloPayload
+{
+    const SCHEMA = '';
+}
 
 $loop = \EventLoop\EventLoop::getLoop();
 
@@ -100,6 +109,7 @@ $httpd->listen(8081)
         $query = \GuzzleHttp\Psr7\parse_query($request->getQuery());
         $payload = \Underscore\Types\Arrays::get($query, 'i', 1);
         $value = new \Rxnet\Routing\DataModel($request->getPath(), $payload);
+
         $subject = new \Rx\Subject\BehaviorSubject($value);
 
         $subject

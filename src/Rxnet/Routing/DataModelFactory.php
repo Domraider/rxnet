@@ -6,6 +6,12 @@ class DataModelFactory
 {
     private $state;
     private $normaliser;
+    private $dataModelClass;
+
+    public function __construct($dataModelClass)
+    {
+        $this->dataModelClass = $dataModelClass;
+    }
 
     public function withState($state)
     {
@@ -21,9 +27,15 @@ class DataModelFactory
 
     public function __invoke(DataModel $dataModel)
     {
-        $data = $dataModel->getPayload();
-        // TODO use normalizer if exists to cast data
-        return new DataModel($this->state, $data, $dataModel->getLabels());
+        $state = $this->state ? : $dataModel->getState();
+        $payload = $dataModel->getPayload();
+        if($this->normaliser) {
+            // Todo make
+            $class = $this->normaliser;
+            $payload = new $class($payload);
+        }
+        $toCreate = $this->dataModelClass;
+        return new $toCreate($state, $payload, $dataModel->getLabels());
     }
 
 }
