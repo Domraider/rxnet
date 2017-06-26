@@ -1,12 +1,12 @@
 <?php
 namespace Rxnet\Routing;
 
+use Exception;
 use Rx\ObserverInterface;
 use Rx\Subject\BehaviorSubject;
-use Rxnet\Subject\EndlessSubject;
 use Underscore\Types\Arrays;
 
-class Router extends EndlessSubject implements ObserverInterface
+class Router implements ObserverInterface
 {
     /** @var Route[] */
     protected $routes = [];
@@ -22,7 +22,7 @@ class Router extends EndlessSubject implements ObserverInterface
     }
 
     /**
-     * Optimistic guy that never unplug
+     * Optimistic guy
      * @param BehaviorSubject $value
      * @throws
      */
@@ -34,6 +34,7 @@ class Router extends EndlessSubject implements ObserverInterface
             throw new RouteNotFoundException("{$routable->getState()} does not exists");
         }
         $handler($value);
-
     }
+    public function onError(Exception $error){}
+    public function onCompleted(){}
 }

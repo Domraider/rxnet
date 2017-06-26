@@ -38,7 +38,7 @@ class YoloRoute extends \Rxnet\Routing\Route
                 echo "Catch error \n";
                 return \Rx\Observable::just($dataModel)
                     ->map(function (\Rxnet\Routing\DataModel $dataModel) {
-                        return $dataModel->withPayload($dataModel->getPayload() + 3);
+                        return $dataModel->withPayload($dataModel->getPayload() - 1);
                     });
             });
     }
@@ -66,15 +66,18 @@ class YoloHandler extends \Rxnet\Routing\Handlers\RouteHandler
      */
     public function handle($payload)
     {
-        return \Rx\Observable::just($payload + $this->add)
-            ->map(function ($i) {
-                if ($i % 2 === 0) {
-                    throw new \Exception('Pair');
-                }
-                if ($i % 11 === 0) {
+
+        return \Rx\Observable::just($payload)
+            ->map(function ($payload) {
+                if ($payload % 11 === 0) {
                     throw new \LogicException('11 !!');
                 }
-                return $i;
+                $payload += $this->add;
+                if ($payload % 2 === 0) {
+                    throw new \Exception('Pair');
+                }
+
+                return $payload;
             });
     }
 }
@@ -85,34 +88,41 @@ $loop = \EventLoop\EventLoop::getLoop();
 // Allow to replay 5 elements from router
 $router = new \Rxnet\Routing\Router();
 // Should be done with dependency injection
-$router->load(new YoloRoute(new YoloHandler(19)));
+$router->load(new YoloRoute(new YoloHandler(5)));
 
 
-\Rx\Observable::interval(1000)
-    ->map(function ($i) {
+$httpd = new \Rxnet\Httpd\Httpd();
+$httpd->listen(8081)
+    ->map(function (\Rxnet\Httpd\HttpdEvent $event) {
         // Behavior subject value will change on each onNext
-        $subject = new \Rx\Subject\BehaviorSubject(new \Rxnet\Routing\DataModel('/yolo', $i));
-        $subject->subscribe(
-            new \Rx\Observer\CallbackObserver(
-                function (\Rxnet\Routing\DataModel $dataModel) use ($subject) {
-                    echo "Youpi get next {$dataModel->getPayload()}, subject value is now {$subject->getValue()->getPayload()} \n";
-                },
-                function (\Exception $e) {
-                    echo "Ooops error {$e->getMessage()} \n";
-                },
-                function () {
-                    echo "Job's done \n";
-                }
-            )
-        );
-        $subject->subscribe(new \Rx\Observer\CallbackObserver(
-            function () {
-                echo "I'm the logger of next \n";
-            },
-            function () {
-                echo "I'm the logger of error \n";
-            })
-        );
+        $request = $event->getRequest();
+        $response = $event->getResponse();
+        $query = \GuzzleHttp\Psr7\parse_query($request->getQuery());
+        $payload = \Underscore\Types\Arrays::get($query, 'i', 1);
+        $value = new \Rxnet\Routing\DataModel($request->getPath(), $payload);
+        $subject = new \Rx\Subject\BehaviorSubject($value);
+
+        $subject
+            // first one is the one built now
+            // Perfect for logging but not for feedback
+            ->skip(1)
+            ->subscribe(
+                new \Rx\Observer\CallbackObserver(
+                    function (\Rxnet\Routing\DataModel $dataModel) use ($subject, $response) {
+                        $response->json(["payload" => $dataModel->getPayload(), "subject" => $subject->getValue()->getPayload()]);
+                    },
+                    function (\Exception $e) use ($response) {
+                        $response->sendError($e->getMessage());
+                    },
+                    function () use ($response) {
+                        if (!$response->isEnded()) {
+                            $response->end();
+                        }
+                    }
+                )
+            );
         return $subject;
     })
     ->subscribe($router, new \Rx\Scheduler\EventLoopScheduler($loop));
+
+echo "Listening on http://127.0.0.1:8081/yolo?i=2\n";
