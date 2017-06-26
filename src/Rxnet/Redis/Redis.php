@@ -159,7 +159,7 @@ class Redis extends Subject
                 $parser = new ResponseParser();
                 $data = $parser->pushIncoming($event->getData());
                 $data = $data[0]->getValueNative();
-
+                $connector->disconnect();
                 return $this->connect("{$data[0]}:{$data[1]}");
             });
     }

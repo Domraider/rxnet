@@ -39,6 +39,7 @@ class RabbitQueue
 
     /**
      * @param Channel $channel
+     * @return $this
      */
     public function setChannel(Channel $channel)
     {

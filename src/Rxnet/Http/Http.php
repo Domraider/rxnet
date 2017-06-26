@@ -10,9 +10,12 @@ use Rxnet\Dns\Dns;
 use Rx\Observable;
 use Rxnet\Connector\Tcp;
 use Rxnet\Connector\Tls;
+use Rxnet\Event\ConnectorEvent;
+use Rxnet\Event\Event;
 use Rxnet\Middleware\MiddlewareInterface;
 use Rxnet\NotifyObserverTrait;
 use Rxnet\Subject\EndlessSubject;
+use Rxnet\Transport\BufferedStream;
 use Underscore\Types\Arrays;
 
 /**
@@ -29,6 +32,10 @@ class Http extends Observable
 {
     use NotifyObserverTrait;
     protected $loop;
+    protected $defaultHeaders = [
+        "User-Agent" => "RxnetHttp/0.4",
+        "Accept" => "*/*",
+    ];
     /**
      * @var EndlessSubject
      */
@@ -71,22 +78,25 @@ class Http extends Observable
      */
     public function request($method, $url, array $opts = [])
     {
-        $headers = @Arrays::get($opts, 'headers', []);
+        $headers = array_merge(
+            $this->defaultHeaders,
+            @Arrays::get($opts, 'headers', [])
+        );
 
         // Set content body, guzzle
-        if ($body = @Arrays::get($opts, 'json')) {
+        if (null !== $body = @Arrays::get($opts, 'json')) {
             $body = json_encode($body);
             $headers['Content-Type'] = 'application/json';
+        } elseif (null !== $body = @Arrays::get($opts, 'form_params')) {
+            $body = http_build_query($body, '', '&');
+            $headers['Content-Type'] = 'application/x-www-form-urlencoded';
         } elseif (!$body = @Arrays::get($opts, 'body')) {
             $body = '';
         }
-        $userAgent = @Arrays::get($opts, 'user-agent', 'RxnetHttp/0.1');
 
         // Create psr default request
         $request = new Request($method, $url, [], $body);
-        $request = $request->withHeader('Host', (string)$request->getUri()->getHost())
-            ->withAddedHeader('User-Agent', $userAgent)
-            ->withAddedHeader('Accept', '*/*');
+        $request = $request->withHeader('Host', (string)$request->getUri()->getHost());
 
         foreach ($headers as $k => $v) {
             $request = $request->withAddedHeader($k, (string)$v);
@@ -127,8 +137,9 @@ class Http extends Observable
 
             $this->dns->resolve($proxy['host'])
                 ->flatMap(
-                    function ($ip) use ($proxy, $opts) {
-                        return $this->getConnector($proxy['scheme'], $opts)->connect($ip, $proxy['port']);
+                    function ($ip) use ($proxy, $opts, $request) {
+                        return $this->getConnector($proxy['scheme'], (string)$request->getUri()->getHost(), $opts)
+                            ->connect($ip, $proxy['port']);
                     })
                 ->subscribe($proxyRequest);
 
@@ -155,8 +166,18 @@ class Http extends Observable
 
             $this->dns->resolve($request->getUri()->getHost())
                 ->flatMap(
-                    function ($ip) use ($scheme, $opts, $port) {
-                        return $this->getConnector($scheme, $opts)->connect($ip, $port);
+                    function ($ip) use ($scheme, $opts, $port, $request) {
+                        return
+                            $this->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
+                                ->connect($ip, $port)
+                                ->map(function (Event $e) {
+                                    if ($e instanceof ConnectorEvent) {
+                                        $stream = $e->data;
+                                        $bufferedStream = new BufferedStream($stream->getSocket(), $stream->getLoop());
+                                        return new ConnectorEvent($e->name, $bufferedStream, $e->labels, $e->getPriority());
+                                    }
+                                    return $e;
+                                });
                     })
                 ->subscribe($req);
 
@@ -169,7 +190,7 @@ class Http extends Observable
      * @param array $opts
      * @return Tcp|Tls
      */
-    public function getConnector($scheme, array $opts = []) {
+    public function getConnector($scheme, $hostName, array $opts = []) {
         if($scheme == 'http') {
             return new Tcp($this->loop);
         }
@@ -177,6 +198,8 @@ class Http extends Observable
         if($sslOpts = Arrays::get($opts, 'ssl')) {
             $connector->setSslContextParams($sslOpts);
         }
+        $connector->setHostName($hostName);
+
         return $connector;
     }
 

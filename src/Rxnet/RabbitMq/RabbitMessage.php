@@ -4,24 +4,27 @@ namespace Rxnet\RabbitMq;
 use Bunny\Channel;
 use Bunny\Message;
 use Rx\Observable;
-use Rx\Subject\Subject;
-use Rxnet\Contract\EventInterface;
-use Rxnet\Contract\EventTrait;
 use Rxnet\Serializer\Serializer;
 use Underscore\Types\Arrays;
 
-class RabbitMessage extends Subject implements EventInterface
+class RabbitMessage
 {
-    use EventTrait;
     protected $channel;
     protected $serializer;
     protected $message;
     protected $trait;
 
     protected $name;
+    protected $routingKey;
     protected $data;
     protected $labels = [];
 
+    /**
+     * RabbitMessage constructor.
+     * @param Channel $channel
+     * @param Message $message
+     * @param Serializer $serializer
+     */
     public function __construct(Channel $channel, Message $message, Serializer $serializer)
     {
         $this->channel = $channel;
@@ -29,13 +32,40 @@ class RabbitMessage extends Subject implements EventInterface
         $this->serializer = $serializer;
 
         $this->data = $serializer->unserialize($message->content);
-        $this->name = $message->routingKey;
+        $this->routingKey = $message->routingKey;
         $this->labels = $message->headers;
         $this->labels['retried'] = $message->deliveryTag;
         $this->labels['exchange'] = $message->exchange;
 
     }
 
+    /**
+     * @return string
+     */
+    public function getRoutingKey()
+    {
+        return $this->routingKey;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getData()
+    {
+        return $this->data;
+    }
+
+    /**
+     * @return array
+     */
+    public function getLabels()
+    {
+        return $this->labels;
+    }
+
+    /**
+     * @return Observable
+     */
     public function ack()
     {
         $promise = $this->channel->ack($this->message);
@@ -53,12 +83,21 @@ class RabbitMessage extends Subject implements EventInterface
         return \Rxnet\fromPromise($promise);
     }
 
+    /**
+     * @param bool $requeue
+     * @return Observable
+     */
     public function reject($requeue = true)
     {
         $promise = $this->channel->reject($this->message, $requeue);
         return \Rxnet\fromPromise($promise);
     }
 
+    /**
+     * @param $delay
+     * @param string $exchange
+     * @return Observable\AnonymousObservable
+     */
     public function retryLater($delay, $exchange = 'direct.delayed')
     {
         $headers = Arrays::without($this->labels, 'retried', 'exchange');
@@ -76,7 +115,7 @@ class RabbitMessage extends Subject implements EventInterface
     }
 
     /**
-     * @return \Rx\Disposable\CallbackDisposable|\Rx\DisposableInterface
+     * @return Observable\AnonymousObservable
      */
     public function rejectToBottom()
     {
@@ -91,32 +130,4 @@ class RabbitMessage extends Subject implements EventInterface
             });
     }
 
-    public function getName()
-    {
-        return $this->name;
-    }
-
-    public function getLabels()
-    {
-        return $this->labels;
-    }
-
-    public function getData($key = null)
-    {
-        return $this->data;
-    }
-
-    public function setData($data)
-    {
-        // TODO: Implement setData() method.
-    }
-
-    /**
-     * @param $prefix
-     * @return bool
-     */
-    public function hasPrefix($prefix)
-    {
-        // TODO: Implement hasPrefix() method.
-    }
 }

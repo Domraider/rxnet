@@ -1,7 +1,7 @@
 {
   "name": "domraider/rxnet",
   "description": "Rx connector for PHP",
-  "version": "0.3.3",
+  "version": "0.4.1",
   "keywords": [
     "rabbit",
     "queue",
@@ -23,7 +23,7 @@
     "guzzlehttp/guzzle": "^6.0",
     "league/json-guard": "0.3.*",
     "daverandom/libdns": "^1.1",
-    "bunny/bunny": "@dev",
+    "domraider/bunny": "@dev",
     "clue/redis-react": "^1.0",
     "voryx/event-loop": "0.2.*",
     "phpoption/phpoption": "^1.5",

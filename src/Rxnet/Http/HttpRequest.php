@@ -1,7 +1,6 @@
 <?php
 namespace Rxnet\Http;
 
-use \Exception;
 use EventLoop\EventLoop;
 use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
@@ -98,7 +97,9 @@ class HttpRequest extends Subject
         }
         if ($socket = $this->stream->getSocket()) {
             EventLoop::getLoop()->removeReadStream($socket);
-            @fclose($socket);
+            if (is_resource($socket)) {
+                @fclose($socket);
+            }
         }
 
         parent::dispose();
@@ -154,7 +155,6 @@ class HttpRequest extends Subject
             }
 
             // Parse rest of body
-
             call_user_func($this->parserCallable, $bodyBuffer);
         }
     }
@@ -250,7 +250,10 @@ class HttpRequest extends Subject
                 $this->needMoreBytes = $chunkLength - $chunkRealLength;
                 $this->incompleteChunk .= $chunk;
                 //echo "  chunk is incomplete we need to read {$this->needMoreBytes} more octets\n";
-                continue;
+
+                if (!$end) {
+                    continue;
+                }
             }
             // Chunk is perfect add it to buffer
             $this->chunkCompleted($chunk);

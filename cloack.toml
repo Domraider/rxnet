@@ -1,0 +1,18 @@
+[target]
+
+# Include source files.
+includes = ["src"]
+
+# Exclude source files.
+excludes = ["vendor", "specs", 'examples']
+
+[report]
+reportDirectory = "./examples"
+
+[report.coverageBounds]
+satisfactory = 60.0
+critical = 30.0
+
+[reporter]
+# TreeReporter
+[reporter.tree]

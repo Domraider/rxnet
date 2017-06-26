@@ -4,9 +4,11 @@ namespace Rxnet\Dns;
 use EventLoop\EventLoop;
 use LibDNS\Decoder\DecoderFactory;
 use LibDNS\Encoder\EncoderFactory;
+use LibDNS\Messages\Message;
 use LibDNS\Messages\MessageFactory;
 use LibDNS\Messages\MessageTypes;
 use LibDNS\Records\QuestionFactory;
+use LibDNS\Records\RecordCollectionFactory;
 use Rx\DisposableInterface;
 use Rx\Observable;
 use Rx\Subject\Subject;
@@ -49,6 +51,9 @@ class Dns extends Subject
         $this->question = new QuestionFactory();
         $this->message = new MessageFactory();
         $this->encoder = (new EncoderFactory())->create();
+
+        //$this->encoder->encode(new Message(new RecordCollectionFactory()));
+
         $this->cache = [];
 
         $this->parseEtcHost();
@@ -99,9 +104,10 @@ class Dns extends Subject
 
     /**
      * @param $host
-     * @return \Rx\Observable\AnonymousObservable with ip address
+     * @param int $maxRecursion
+     * @return Observable\AnonymousObservable with ip address
      */
-    public function resolve($host)
+    public function resolve($host, $maxRecursion = 50)
     {
         // Don't resolve IP
         if (filter_var($host, FILTER_VALIDATE_IP)) {
@@ -112,13 +118,21 @@ class Dns extends Subject
             return Observable::just($this->cache[$host]);
         }
         return $this->lookup($host, 'A')
-            ->map(function (Event $event) use ($host) {
+            ->flatMap(function (Event $event) use ($host, $maxRecursion) {
                 $ip = Arrays::random($event->data["answers"]);
                 if (!$ip) {
                     throw new RemoteNotFoundException("Can't resolve {$host}");
                 }
+
+                if (!filter_var($ip, FILTER_VALIDATE_IP)) {
+                    if ($maxRecursion <= 0) {
+                        throw new RecursionLimitException();
+                    }
+                    return $this->resolve($ip, $maxRecursion - 1);
+                }
+
                 $this->cache[$host] = $ip;
-                return $ip;
+                return Observable::just($ip);
             });
     }
 

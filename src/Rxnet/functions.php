@@ -5,6 +5,7 @@ use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 use Rx\Observable;
 use Rx\Observer\CallbackObserver;
+use Rx\ObserverInterface;
 use Rx\Scheduler\EventLoopScheduler;
 use Rx\Subject\AsyncSubject;
 use Rxnet\Contract\EventInterface;
@@ -114,6 +115,15 @@ function event_is($path)
     };
 }
 
+function fromQueue(\SplQueue $queue) {
+    return Observable::create(function(ObserverInterface $observer) use($queue) {
+       while($value = $queue->count()) {
+           //echo "dequeue";
+           $observer->onNext($queue->pop());
+       }
+       $observer->onCompleted();
+    });
+}
 /**
  * @return \Closure
  */

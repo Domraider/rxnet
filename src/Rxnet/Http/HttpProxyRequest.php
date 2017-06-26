@@ -7,8 +7,11 @@ use GuzzleHttp\Psr7\Response;
 use Rx\Observable;
 use Rx\Subject\Subject;
 use Rxnet\Event\ConnectorEvent;
+use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
+use Rxnet\Observer\StdOutObserver;
 use Rxnet\Stream\StreamEvent;
+use Rxnet\Transport\FilterableStream;
 
 class HttpProxyRequest extends Subject
 {
@@ -25,6 +28,8 @@ class HttpProxyRequest extends Subject
     protected $request;
     /** @var  ConnectorEvent */
     protected $connectorEvent;
+    /** @var  ConnectorEvent */
+    protected $filteredConnectorEvent = null;
     /**
      * @var bool
      */
@@ -55,11 +60,34 @@ class HttpProxyRequest extends Subject
     public function __invoke(ConnectorEvent $event)
     {
         $this->connectorEvent = $event;
+        $this->filteredConnectorEvent = null;
         $stream = $event->getStream();
         $stream->subscribe($this);
         $stream->write($this->data);
 
         return $this;
+    }
+
+    public function getConnectorEvent()
+    {
+        if (null == $this->filteredConnectorEvent) {
+            $event = $this->connectorEvent;
+            $stream = $event->getStream();
+
+            $loop = EventLoop::getLoop();
+            $loop->removeReadStream($stream->getSocket());
+
+            $filterableStream = new FilterableStream($stream->getSocket(), $stream->getLoop());
+
+            $filteredStream = $filterableStream
+                ->filter(function(Event $e) {
+                    $res = !($e->is("/stream/data") && empty($e->data));
+                    return $res;
+                });
+            $this->filteredConnectorEvent = new ConnectorEvent($event->name, $filteredStream, $event->labels, $event->getPriority());
+        }
+
+        return $this->filteredConnectorEvent;
     }
     
     /**
@@ -83,7 +111,7 @@ class HttpProxyRequest extends Subject
         if (!$this->toggleCrypto) {
             $stream->removeObserver($this);
             foreach($this->observers as $observer) {
-                $observer->onNext($this->connectorEvent);
+                $observer->onNext($this->getConnectorEvent());
             }
             return;
         }
@@ -122,7 +150,7 @@ class HttpProxyRequest extends Subject
                 $loop->removeReadStream($socket);
                 foreach($this->observers as $observer) {
                     /* @var \Rx\ObserverInterface $observer */
-                    $observer->onNext($this->connectorEvent);
+                    $observer->onNext($this->getConnectorEvent());
                 }
 
                 break;
