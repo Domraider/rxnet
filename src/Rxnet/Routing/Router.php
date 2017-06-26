@@ -3,11 +3,12 @@ namespace Rxnet\Routing;
 
 use Rx\ObserverInterface;
 use Rx\Subject\BehaviorSubject;
-use Rx\Subject\ReplaySubject;
+use Rxnet\Subject\EndlessSubject;
 use Underscore\Types\Arrays;
 
-class Router extends ReplaySubject implements ObserverInterface
+class Router extends EndlessSubject implements ObserverInterface
 {
+    /** @var Route[] */
     protected $routes = [];
 
     /**
@@ -21,7 +22,7 @@ class Router extends ReplaySubject implements ObserverInterface
     }
 
     /**
-     * Optimistic guy
+     * Optimistic guy that never unplug
      * @param BehaviorSubject $value
      * @throws
      */
@@ -32,9 +33,7 @@ class Router extends ReplaySubject implements ObserverInterface
         if (!$handler = Arrays::get($this->routes, $routable->getState())) {
             throw new RouteNotFoundException("{$routable->getState()} does not exists");
         }
-        foreach ($this->observers as $observer) {
-            $value->subscribe($observer);
-        }
         $handler($value);
+
     }
 }

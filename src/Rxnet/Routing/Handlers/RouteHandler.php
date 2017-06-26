@@ -14,8 +14,7 @@ abstract class RouteHandler
     {
         return $this->handle($dataModel->getPayload())
             ->map(function ($res) use ($dataModel) {
-                $dataModel->withPayload($res);
-                return $dataModel;
+                return $dataModel->withPayload($res);
             });
     }
 

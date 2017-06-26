@@ -68,10 +68,10 @@ class YoloHandler extends \Rxnet\Routing\Handlers\RouteHandler
     {
         return \Rx\Observable::just($payload + $this->add)
             ->map(function ($i) {
-                if ($i % 2) {
+                if ($i % 2 === 0) {
                     throw new \Exception('Pair');
                 }
-                if ($i % 11) {
+                if ($i % 11 === 0) {
                     throw new \LogicException('11 !!');
                 }
                 return $i;
@@ -82,17 +82,20 @@ class YoloHandler extends \Rxnet\Routing\Handlers\RouteHandler
 
 $loop = \EventLoop\EventLoop::getLoop();
 
+// Allow to replay 5 elements from router
 $router = new \Rxnet\Routing\Router();
-$router->load(new YoloRoute(new YoloHandler(4)));
+// Should be done with dependency injection
+$router->load(new YoloRoute(new YoloHandler(19)));
 
 
 \Rx\Observable::interval(1000)
     ->map(function ($i) {
+        // Behavior subject value will change on each onNext
         $subject = new \Rx\Subject\BehaviorSubject(new \Rxnet\Routing\DataModel('/yolo', $i));
         $subject->subscribe(
             new \Rx\Observer\CallbackObserver(
-                function (\Rxnet\Routing\DataModel $dataModel) {
-                    echo "Youpi get next {$dataModel->getPayload()} \n";
+                function (\Rxnet\Routing\DataModel $dataModel) use ($subject) {
+                    echo "Youpi get next {$dataModel->getPayload()}, subject value is now {$subject->getValue()->getPayload()} \n";
                 },
                 function (\Exception $e) {
                     echo "Ooops error {$e->getMessage()} \n";
@@ -101,6 +104,14 @@ $router->load(new YoloRoute(new YoloHandler(4)));
                     echo "Job's done \n";
                 }
             )
+        );
+        $subject->subscribe(new \Rx\Observer\CallbackObserver(
+            function () {
+                echo "I'm the logger of next \n";
+            },
+            function () {
+                echo "I'm the logger of error \n";
+            })
         );
         return $subject;
     })

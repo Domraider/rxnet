@@ -17,10 +17,11 @@ abstract class Route
 
     /**
      * @param BehaviorSubject $feedback
+     * @return \Rx\Disposable\CallbackDisposable|\Rx\DisposableInterface
      */
     public function __invoke(BehaviorSubject $feedback)
     {
-        Observable::just($feedback->getValue())
+        return Observable::just($feedback->getValue())
             ->flatMap([$this, 'handle'])
             ->subscribe($feedback);
     }
