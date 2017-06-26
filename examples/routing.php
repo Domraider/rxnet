@@ -33,7 +33,6 @@ class YoloRoute extends \Rxnet\Routing\Route
         return \Rx\Observable::just($dataModel)
             ->map(
                 \Rxnet\Routing\DataModel::factory()
-                    ->withNormalizer(YoloPayload::class)
             )
             ->flatMap([$this, 'yoloHandler'])
             ->catchError(function (\Exception $e) use ($dataModel) {
