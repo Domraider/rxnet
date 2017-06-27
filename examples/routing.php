@@ -44,7 +44,12 @@ class YoloRoute extends \Rxnet\Routing\Route
                     ->map(function (\Rxnet\Routing\DataModel $dataModel) {
                         return $dataModel->withPayload($dataModel->getPayload() - 1);
                     });
-            });
+            })
+            ->map(
+                \Rxnet\Routing\DataModel::factory()
+                    ->withState('/test')
+                    ->withNormalizer(YoloPayload::class)
+            );
     }
 }
 
