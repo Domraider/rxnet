@@ -2,19 +2,25 @@
 namespace Rxnet\Routing;
 
 use FastRoute\BadRouteException;
+use FastRoute\DataGenerator\GroupCountBased;
 use FastRoute\RouteParser\Std;
-use Rx\ObserverInterface;
+use Rx\Observable;
 use Rx\Subject\ReplaySubject;
 use Rx\Subject\Subject;
 use Rxnet\Contract\EventInterface;
-use Rxnet\Exceptions\RouteNotFoundException;
+use Rxnet\Event\Event;
 use Rxnet\NotifyObserverTrait;
-use \Exception;
-use Underscore\Types\Arrays;
 
-class Router implements ObserverInterface
+class EventSource extends Subject
 {
     use NotifyObserverTrait;
+    /**
+     * @var RouteInterface[]|array
+     */
+    protected $routes = [];
+
+    /** @var string[] */
+    protected $loadedNamespaces = [];
 
     /**
      * @var \SplObjectStorage
@@ -27,37 +33,29 @@ class Router implements ObserverInterface
     }
 
     /**
-     * @param $route
-     * @param array|callable $where
-     * @return \Rx\Observable\AnonymousObservable
+     * @param EventInterface $subject
      */
-    public function route($route, $where = null)
+    public function dispatch(EventInterface $subject)
     {
-        // je crée un UnbreakableSubject qui va gérer la route, c'est ce que je vais renvoyer à l'utilisateur en tant qu'observable seul
-        // je m'abonne au flux d'events interne 
-        // sur ce flux je vais recevoir des RoutableSubject me servant de lien avec l'adapter
-        // ces routable subject vont contenir un DataModel et vont être dans un état avec un payload spécifique
-        // si un event match la route je tranfert les éléments a mon UnbreakableSubject (onNext)
-        // au résultat de mon UnbreakableSubject j'abonne le sujet reçu pour lui evnvoyer le résultat, les erreurs, la fin de traitement
-        
-        // Comment remonter les erreurs au sujet principal
-        // Routable Subject > DataModel avec state (label+name) > Payload spécifique
-        // Subject = feedback adapteur > finis au niveau du router
-        // DataModel = relations, routage > dispatché à l'observable de la route 
-        // Payload = lecture simplifiée, normalisation > lu, transformé, funsionné .. par tout ce qui est décrit en dessous
-        // Action, Catcher, Mapper, Observables > Handlers
+        $this->notifyNext($subject);
+        //var_dump($subject, $this->observers);
+        // TODO subscribe to put in event store ?
+    }
+
+    public function route($route)
+    {
         $parser = new Std();
         $detail = $parser->parse($route);
 
         $routes = [];
-        // TODO create custom subject to not dispose on error
-        $observable = new Subject();
-        // Wait for observable to be 
+        $observable = new ReplaySubject();
+
         foreach ($detail as $routeData) {
             $b = $this->buildRegexForRoute($routeData);
-            $regex = '~^(' . $b[0] . ')$~';
+            //print_r($b);
+            $regex = '('.$b[0].')';
             $routeMap = $b[1];
-            $routes[] = compact('regex', 'routeMap', 'where');
+            $routes[] = compact('regex', 'routeMap');
         }
         $this->routing->attach($observable, $routes);
 
@@ -65,14 +63,13 @@ class Router implements ObserverInterface
     }
 
     /**
-     * @param Subject|EventInterface $value
-     * @throws RouteNotFoundException
+     * @param EventInterface $value
+     * @throws \Exception
      */
     public function onNext($value)
     {
         $uri = $value->getName();
-
-        // TODO add route caching
+        // TODO add route cache
         foreach ($this->routing as $subject) {
             /* @var ReplaySubject $subject */
             $routes = $this->routing->offsetGet($subject);
@@ -81,29 +78,7 @@ class Router implements ObserverInterface
                 if (!preg_match($data['regex'], $uri, $matches)) {
                     continue;
                 }
-                $ok = true;
-                // Advanced filter
-                // closure mode
-                if (is_callable($data['where'])) {
-                    $filter = $data['where'];
-                    $ok = $filter($value);
-                }
-                // basic mode filter on labels
-                elseif (is_array($data['where'])) {
-                    $ok = false;
-                    $labels = $value->getLabels();
-                    foreach ($data['where'] as $k => $v) {
-                        if (Arrays::get($labels, $k) === $v) {
-                            $ok = true;
-                            continue;
-                        }
-                        $ok = false;
-                        break;
-                    }
-                }
-                if (!$ok) {
-                    continue;
-                }
+
                 $vars = [];
                 $i = 0;
                 foreach ($data['routeMap'] as $varName) {
@@ -113,28 +88,13 @@ class Router implements ObserverInterface
                 $labels = array_merge($labels, $vars);
                 $value->setLabels($labels);
                 $subject->onNext($value);
-                $subject->subscribe($value);
                 return;
             }
         }
-
-        throw new RouteNotFoundException("not found");
+        throw new \Exception("not found");
     }
 
-    public function onError(Exception $error)
-    {
-        throw $error;
-    }
 
-    public function onCompleted()
-    {
-        // TODO: Implement onCompleted() method.
-    }
-
-    /**
-     * @param $routeData
-     * @return array
-     */
     private function buildRegexForRoute($routeData)
     {
         $regex = '';
@@ -167,10 +127,6 @@ class Router implements ObserverInterface
         return [$regex, $variables];
     }
 
-    /**
-     * @param $regex
-     * @return bool|int
-     */
     private function regexHasCapturingGroups($regex)
     {
         if (false === strpos($regex, '(')) {
@@ -194,5 +150,50 @@ class Router implements ObserverInterface
             ~x',
             $regex
         );
+    }
+    /**
+     *  - connaitre les routes inscrites
+     *  - pouvoir désactiver / activer des routes
+     *  - gérer le jsonpath à la falcor
+     *  - utiliser opérateur start pour attendre un abonné
+     */
+    /**
+     * @param $namespace
+     */
+    public function loadNamespaceRoutes($namespace)
+    {
+        if (in_array($namespace, $this->loadedNamespaces)) {
+            \Log::error(sprintf("Namespace %s is already loaded", $namespace));
+            return;
+        }
+
+        foreach (array_get($this->routes, $namespace, []) as $k => $class) {
+
+            if (!is_object($class)) {
+                $route = \App::make($class);
+                $this->routes[$k] = \App::call([$route, 'handle']);
+                $this->loadedNamespaces[] = $namespace;
+            }
+        }
+    }
+
+    /**
+     * @param string $namespace
+     * @param RouteInterface[] $routes
+     * @param bool $load
+     */
+    public function addRoutes($namespace, $routes, $load = false)
+    {
+        if (!is_array($routes)) {
+            $routes = [$routes];
+        }
+        if (!array_key_exists($namespace, $this->routes)) {
+            $this->routes[$namespace] = [];
+        }
+        $this->routes[$namespace] = array_merge($this->routes[$namespace], $routes);
+
+        if ($load) {
+            $this->loadNamespaceRoutes($namespace);
+        }
     }
 }
