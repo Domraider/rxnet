@@ -17,7 +17,7 @@
   "require": {
     "php": "^5.6 || ^7.0",
     "reactivex/rxphp": "1.5.3",
-    "react/react": "0.4.1",
+    "react/react": "0.4.2",
     "ramsey/uuid": "^3.5.1",
     "nikic/fast-route": "^1.2",
     "guzzlehttp/guzzle": "^6.0",
