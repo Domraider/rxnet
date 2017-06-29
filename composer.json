@@ -21,7 +21,6 @@
     "ramsey/uuid": "^3.5.1",
     "nikic/fast-route": "^1.2",
     "guzzlehttp/guzzle": "^6.0",
-    "league/json-guard": "0.3.*",
     "domraider/libdns": "^1.1",
     "domraider/bunny": "@dev",
     "clue/redis-react": "^1.0",
