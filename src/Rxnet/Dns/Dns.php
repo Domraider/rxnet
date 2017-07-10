@@ -27,12 +27,12 @@ use Underscore\Types\Arrays;
 /**
  * Class Dns
  * @package Rxnet\Dns
- * @method Observable a($domain, $ns = null)
- * @method Observable aaaa($domain, $ns = null)
- * @method Observable cname($domain, $ns = null)
- * @method Observable mx($domain, $ns = null)
- * @method Observable ns($domain, $ns = null)
- * @method Observable soa($domain, $ns = null)
+ * @method Observable a($domain, $ns = null, $dnsHost = null, $dnsPort = null)
+ * @method Observable aaaa($domain, $ns = null, $dnsHost = null, $dnsPort = null)
+ * @method Observable cname($domain, $ns = null, $dnsHost = null, $dnsPort = null)
+ * @method Observable mx($domain, $ns = null, $dnsHost = null, $dnsPort = null)
+ * @method Observable ns($domain, $ns = null, $dnsHost = null, $dnsPort = null)
+ * @method Observable soa($domain, $ns = null, $dnsHost = null, $dnsPort = null)
  */
 class Dns extends Subject
 {
@@ -45,6 +45,8 @@ class Dns extends Subject
     protected $encoder;
     protected $observable;
     protected $cache = [];
+    protected $defaultDnsHost;
+    protected $defaultDnsPort;
 
     public function __construct(Udp $connector = null, EndlessSubject $subject = null)
     {
@@ -54,6 +56,9 @@ class Dns extends Subject
         $this->question = new QuestionFactory();
         $this->message = new MessageFactory();
         $this->encoder = (new EncoderFactory())->create();
+
+        $this->defaultDnsHost = '8.8.8.8';
+        $this->defaultDnsPort = 53;
 
         //$this->encoder->encode(new Message(new RecordCollectionFactory()));
 
@@ -108,9 +113,11 @@ class Dns extends Subject
     /**
      * @param $host
      * @param int $maxRecursion
+     * @param null|string $dnsHost
+     * @param null|int $dnsPort
      * @return Observable\AnonymousObservable with ip address
      */
-    public function resolve($host, $maxRecursion = 50)
+    public function resolve($host, $maxRecursion = 50, $dnsHost = null, $dnsPort = null)
     {
         // Don't resolve IP
         if (filter_var($host, FILTER_VALIDATE_IP)) {
@@ -121,8 +128,9 @@ class Dns extends Subject
             ->map(function($ip) {
                 return Observable::just($ip);
             })
-            ->getOrCall(function() use ($host, $maxRecursion) {
-                return $this->lookup($host, 'A')
+            ->getOrCall(function() use ($dnsHost, $dnsPort, $host, $maxRecursion) {
+                return $this
+                    ->lookup($host, 'A', $dnsHost, $dnsPort)
                     ->flatMap(function (Event $event) use ($host, $maxRecursion) {
                         if (!$event->data["answers"]) {
                             throw new RemoteNotFoundException("Can't resolve {$host}");
@@ -148,11 +156,18 @@ class Dns extends Subject
     /**
      * @param $domain
      * @param string $type
-     * @param string $server
-     * @return \Rx\Observable\AnonymousObservable with DnsResponse
+     * @param null|string $server dns host value
+     * @param null|int $port dns port value
+     * @return Observable\AnonymousObservable with DnsResponse
      */
-    public function lookup($domain, $type = 'ns', $server = '8.8.8.8')
+    public function lookup($domain, $type = 'ns', $server = null, $port = null)
     {
+        if (null === $server) {
+            $server = $this->defaultDnsHost;
+        }
+        if (null === $port) {
+            $port = $this->defaultDnsPort;
+        }
         $code = $this->convert($type);
         $question = $this->question->create($code);
         $question->setName($domain);
@@ -169,7 +184,8 @@ class Dns extends Subject
         $req = new DnsRequest($requestPacket, $labels);
         $this->notifyNext(new Event('/dns/request', ['client' => $this, 'connector' => $this->connector, 'request' => $request], $labels));
 
-        return $this->connector->connect($server, 53)
+        return $this->connector
+            ->connect($server, $port)
             ->flatMap(function (ConnectorEvent $event) use ($req) {
                 $stream = $event->getStream();
                 $stream->subscribe($req);
@@ -224,6 +240,16 @@ class Dns extends Subject
     }
 
     /**
+     * @param string $host
+     * @param int $port
+     */
+    public function setDefaultDnsClient($host, $port = 53)
+    {
+        $this->defaultDnsHost = $host;
+        $this->defaultDnsPort = $port;
+    }
+
+    /**
      * @param MiddlewareInterface $observer
      * @return DisposableInterface
      */
@@ -237,7 +263,8 @@ class Dns extends Subject
      * @param $ip
      * @param $ttl
      */
-    protected function insertIntoCache($name, $ip, $ttl) {
+    protected function insertIntoCache($name, $ip, $ttl)
+    {
         $expire = $ttl >= 0 ? time() + $ttl : -1;
         $this->cache[$name] = [
             'ip' => $ip,
@@ -249,7 +276,8 @@ class Dns extends Subject
      * @param $name
      * @return Option
      */
-    protected function getFromCache($name) {
+    protected function getFromCache($name)
+    {
         return Option::fromArraysValue($this->cache, $name)
             ->flatMap(function($cachedData) use ($name) {
                 $expire = $cachedData['expire'];
