@@ -252,7 +252,7 @@ class Http extends Observable
     public function requestRaw(Request $request, array $opts = [])
     {
         // To retry properly this observable will be retried
-        return Observable::create(function(ObserverInterface $observer)  use($request, $opts) {
+        return Observable::create(function(ObserverInterface $observer)  use ($request, $opts) {
             $scheme = $request->getUri()->getScheme();
             if (!$port = $request->getUri()->getPort()) {
                 $port = ($request->getUri()->getScheme() === 'http') ? 80 : 443;
@@ -264,7 +264,12 @@ class Http extends Observable
             $req = new HttpRequest($request, $streamed, $timeout);
 
             $disposable = $this->dns
-                ->resolve($request->getUri()->getHost())
+                ->resolve(
+                    $request->getUri()->getHost(),
+                    50,
+                    Arrays::get($opts, 'dns_host'),
+                    Arrays::get($opts, 'dns_port')
+                )
                 ->flatMap(function ($ip) use ($scheme, $opts, $port, $request, $connectTimeout) {
                     return $this
                         ->getConnector($scheme, (string)$request->getUri()->getHost(), $opts)
