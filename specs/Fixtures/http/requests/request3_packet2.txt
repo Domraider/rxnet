@@ -1,0 +1,10 @@
+TTP/1.1 404 Not Found
+Access-Control-Allow-Headers: accept, content-type, authorization
+Access-Control-Allow-Methods: POST, GET, OPTIONS, PUT, DELETE
+Access-Control-Allow-Origin: *
+Content-Type: text/plain; charset=utf-8
+X-Content-Type-Options: nosniff
+Date: Fri, 21 Jul 2017 11:57:37 GMT
+Content-Length: 19
+
+404 page not found
