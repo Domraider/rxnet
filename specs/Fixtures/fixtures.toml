@@ -5,3 +5,7 @@ response1 = "http/requests/response1.txt"
 
 request2 = "http/requests/request2.txt"
 response2 = "http/requests/response2.txt"
+
+request3-packet1 = "http/requests/request3_packet1.txt"
+request3-packet2 = "http/requests/request3_packet2.txt"
+response3 = "http/requests/response3.txt"
