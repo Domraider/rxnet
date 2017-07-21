@@ -1,6 +1,10 @@
 # RxNet
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License](https://poser.pugx.org/domraider/rxnet/license)](https://packagist.org/packages/domraider/rxnet)
+[![Latest Stable Version](https://poser.pugx.org/domraider/rxnet/v/stable)](https://packagist.org/packages/domraider/rxnet)
+[![Total Downloads](https://poser.pugx.org/domraider/rxnet/downloads)](https://packagist.org/packages/domraider/rxnet)
+[![Latest Unstable Version](https://poser.pugx.org/domraider/rxnet/v/unstable)](https://packagist.org/packages/domraider/rxnet)
+[![composer.lock](https://poser.pugx.org/domraider/rxnet/composerlock)](https://packagist.org/packages/domraider/rxnet)
 
 [RxPhp](https://github.com/ReactiveX/RxPHP) is a great work that brings us Reactive programming : asynchronous programming for human being.  
 You can play with reactiveX on [RxMarble.com](http://rxmarbles.com/), find all the available operators on the official [Reactivex.io](http://reactivex.io/documentation/operators.html) website or read an [interesting introduction](https://gist.github.com/staltz/868e7e9bc2a7b8c1f754).
