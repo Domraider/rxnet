@@ -18,17 +18,13 @@ class HttpRequest extends Subject
     const HTTP_TIMEOUT_EXCEPTION_MESSAGE = 'Http Timeout';
 
     use NotifyObserverTrait;
-    /**
-     * @var string
-     */
+    /**  @var string */
     public $data;
-    /**
-     * @var string
-     */
+    /** @var string */
     public $buffer = '';
-    /**
-     * @var array
-     */
+    /** @var string */
+    public $headBuffer = '';
+    /** @var array */
     public $labels = [];
 
     protected $parserCallable;
@@ -143,31 +139,35 @@ class HttpRequest extends Subject
      */
     public function parseHead($data)
     {
-        if (false !== strpos($data, "\r\n\r\n")) {
-            list($headers, $bodyBuffer) = explode("\r\n\r\n", $data, 2);
+        $this->headBuffer .= $data;
 
-            // extract headers
-            $response = \GuzzleHttp\Psr7\parse_response($headers);
-            $this->response = $response;
-
-            $encoding = Arrays::first($response->getHeader('Transfer-Encoding'));
-
-
-            switch ($encoding) {
-                case 'chunked':
-                    $this->parserCallable = [$this, 'parseChunk'];
-                    break;
-                // TODO multipart
-                default:
-                    $this->parserCallable = [$this, 'parseContentLength'];
-                    if ($length = $response->getHeader("Content-Length")) {
-                        $this->contentLength = (int)Arrays::first($length);
-                    }
-            }
-
-            // Parse rest of body
-            call_user_func($this->parserCallable, $bodyBuffer);
+        if (false === strpos($this->headBuffer, "\r\n\r\n")) {
+            return;
         }
+
+        list($headers, $bodyBuffer) = explode("\r\n\r\n", $this->headBuffer, 2);
+
+        // extract headers
+        $response = \GuzzleHttp\Psr7\parse_response($headers);
+        $this->response = $response;
+
+        $encoding = Arrays::first($response->getHeader('Transfer-Encoding'));
+
+
+        switch ($encoding) {
+            case 'chunked':
+                $this->parserCallable = [$this, 'parseChunk'];
+                break;
+            // TODO multipart
+            default:
+                $this->parserCallable = [$this, 'parseContentLength'];
+                if ($length = $response->getHeader("Content-Length")) {
+                    $this->contentLength = (int)Arrays::first($length);
+                }
+        }
+
+        // Parse rest of body
+        call_user_func($this->parserCallable, $bodyBuffer);
     }
 
     /**
@@ -274,6 +274,7 @@ class HttpRequest extends Subject
         }
         $this->onCompleted();
         $this->buffer = "";
+        $this->headBuffer = "";
     }
 
     public function __toString()
