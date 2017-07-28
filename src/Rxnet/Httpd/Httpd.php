@@ -52,7 +52,11 @@ class Httpd extends Observable
      */
     public function onConnection(ConnectionInterface $conn)
     {
-        $labels = ['remote' => $conn->getRemoteAddress(), 'request_id' => Uuid::uuid4()->toString()];
+        $labels = [
+            'remote' => $conn->getRemoteAddress(),
+            'request_id' => Uuid::uuid4()->toString(),
+            'start_time' => microtime(true),
+        ];
         $request = new HttpdRequest($conn->getRemoteAddress(), $labels);
         $response = new HttpdResponse($conn, $labels);
 

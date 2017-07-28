@@ -179,6 +179,7 @@ class HttpdResponse extends Observable
         if ($this->chunkedEncoding) {
             $this->conn->write("0\r\n\r\n");
         }
+        $this->labels['end_time'] = microtime(true);
         $this->notifyNext(new Event("/httpd/response/written", $this, $this->labels));
         $this->conn->end();
 
