@@ -113,7 +113,7 @@ class Router implements ObserverInterface
                 $labels = array_merge($labels, $vars);
                 $value->setLabels($labels);
                 $subject->onNext($value);
-                $subject->subscribe($value);
+
                 return;
             }
         }
