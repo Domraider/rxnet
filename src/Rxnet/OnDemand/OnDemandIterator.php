@@ -28,7 +28,7 @@ class OnDemandIterator implements OnDemandInterface
     {
         $this->iterator = $iterator;
         $scheduler = ($scheduler) ?: new EventLoopScheduler(EventLoop::getLoop());
-        $this->obs = ($replaySubject) ?: new ReplaySubject(null, null, $scheduler);
+        $this->obs = ($replaySubject) ?: new ReplaySubject(1, 1, $scheduler);
 
         $this->completed = false;
     }
