@@ -101,9 +101,8 @@ class HttpdRequest extends Observable
      */
     public function getHeader($header)
     {
-        $psrHeader =  $this->request->getHeader($header);
-
-            return null === $psrHeader ? null : reset($psrHeader);
+        $psrHeader = $this->request->getHeader($header);
+        return empty($psrHeader) ? null : reset($psrHeader);
     }
 
     /**
