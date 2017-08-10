@@ -1,5 +1,5 @@
 <?php
-namespace RxNet\Dns;
+namespace Rxnet\Dns;
 
 
 use Rx\Subject\Subject;
