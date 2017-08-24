@@ -84,6 +84,9 @@ class Httpd extends Observable
         $request
             ->take(1)
             ->subscribeCallback(function () use ($request, $response, $labels) {
+                $response->labels['request_path'] = $request->getPath();
+                $response->labels['request_method'] = $request->getMethod();
+
                 $this->dispatch($request, $response, $labels);
             });
     }
