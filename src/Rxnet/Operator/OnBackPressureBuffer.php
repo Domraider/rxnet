@@ -80,8 +80,7 @@ class OnBackPressureBuffer implements OperatorInterface
                     // Add to queue
                     $this->queue->push($next);
                 },
-                [$this->subject, 'onError'],
-                [$this->subject, 'onCompleted']
+                [$this->subject, 'onError']
             ),
             $scheduler
         );
@@ -100,6 +99,7 @@ class OnBackPressureBuffer implements OperatorInterface
         // Queue is finished we can return to live stream
         if ($this->queue->isEmpty()) {
             $this->pending = false;
+            $this->subject->onCompleted();
             return;
         }
         // Take element in order they have been inserted
