@@ -36,6 +36,7 @@ class OnBackPressureBufferFile implements OperatorInterface
     protected $pending = false;
     protected $path;
     protected $serializer;
+    protected $sourceCompleted;
 
     public function __construct($path, Serializer $serializer, $capacity = -1, callable $onOverflow = null, $overflowStrategy = self::OVERFLOW_STRATEGY_ERROR)
     {
@@ -104,7 +105,10 @@ class OnBackPressureBufferFile implements OperatorInterface
 
 
                 },
-                [$this->subject, 'onError']
+                [$this->subject, 'onError'],
+                function() {
+                  $this->sourceCompleted = true;
+                }
             ),
             $scheduler
         );
@@ -129,7 +133,9 @@ class OnBackPressureBufferFile implements OperatorInterface
         // Queue is finished we can return to live stream
         if ($this->queue->isEmpty()) {
             $this->pending = self::BUFFER_EMPTY;
-            $this->subject->onCompleted();
+            if($this->sourceCompleted) {
+              $this->subject->onCompleted();
+            }
             return;
         }
         // Take element in order they have been inserted

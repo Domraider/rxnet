@@ -33,13 +33,14 @@ $scheduler = new EventLoopScheduler($loop);
 $backPressure = new \Rxnet\Operator\OnBackPressureBuffer(5);
 
 \Rx\Observable::interval(1000)
+    ->take(10)
     ->doOnNext(function($i) {
         echo "produce {$i} ";
     })
     ->lift($backPressure->operator())
     ->flatMap(function ($i) {
         return \Rx\Observable::just($i)
-            ->delay(3000);
+            ->delay(1500);
     })
     ->doOnNext([$backPressure, 'request'])
     ->subscribe($stdout, $scheduler);

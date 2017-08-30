@@ -33,6 +33,7 @@ $scheduler = new EventLoopScheduler($loop);
 $backPressure = new \Rxnet\Operator\OnBackPressureBufferFile('./', new \Rxnet\Serializer\MsgPack(), 100);
 
 \Rx\Observable::interval(1000)
+    ->take(10)
     ->doOnNext(function($i) {
         echo "produce {$i} ";
     })
