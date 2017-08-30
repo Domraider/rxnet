@@ -104,8 +104,7 @@ class OnBackPressureBufferFile implements OperatorInterface
 
 
                 },
-                [$this->subject, 'onError'],
-                [$this->subject, 'onCompleted']
+                [$this->subject, 'onError']
             ),
             $scheduler
         );
@@ -130,6 +129,7 @@ class OnBackPressureBufferFile implements OperatorInterface
         // Queue is finished we can return to live stream
         if ($this->queue->isEmpty()) {
             $this->pending = self::BUFFER_EMPTY;
+            $this->subject->onCompleted();
             return;
         }
         // Take element in order they have been inserted
