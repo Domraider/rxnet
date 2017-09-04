@@ -83,7 +83,12 @@ class OnBackPressureBuffer implements OperatorInterface
                 },
                 [$this->subject, 'onError'],
                 function() {
-                  $this->sourceCompleted = true;
+                    if(!$this->pending) {
+                        $this->subject->onCompleted();
+                    }
+                    else {
+                        $this->sourceCompleted = true;
+                    }
                 }
             ),
             $scheduler
