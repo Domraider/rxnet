@@ -15,7 +15,7 @@ class ExceptionWithLabels extends \Exception implements HasLabelsInterface
             var_dump($labels);
             die;
         }
-        $code = Arrays::get($labels, 'code', 500);
+        $code = (int) Arrays::get($labels, 'code', 500);
         if($previous) {
             $message.= ' > '.$previous->getMessage();
         }
