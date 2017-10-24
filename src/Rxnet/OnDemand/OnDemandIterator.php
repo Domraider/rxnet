@@ -56,6 +56,17 @@ class OnDemandIterator implements OnDemandInterface
     }
 
     /**
+     * @param int $count
+     * @return \Closure
+     */
+    public function produceNextCallback($count = 1)
+    {
+        return function () use ($count) {
+            $this->produceNext($count);
+        };
+    }
+
+    /**
      * @return \Rx\Observable
      */
     public function getObservable()
