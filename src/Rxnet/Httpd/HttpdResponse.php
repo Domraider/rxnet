@@ -127,6 +127,7 @@ class HttpdResponse extends Observable
     private function formatHead($status, array $headers)
     {
         $status = (int) $status;
+        $this->labels['http_status'] = $status;
         $text = isset(ResponseCodes::$statusTexts[$status]) ? ResponseCodes::$statusTexts[$status] : '';
         $data = "HTTP/1.1 $status $text\r\n";
 
