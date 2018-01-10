@@ -57,20 +57,17 @@ class RequestParser
             $this->request->onHead($psrRequest);
 
             $encoding = $this->request->getHeader("Transfer-Encoding");
-            if (in_array($this->request->getMethod(), ['GET', 'HEAD'])) {
+            if (\in_array($this->request->getMethod(), ['GET', 'HEAD'], true)) {
                 $this->notifyCompleted();
                 return;
             }
-            switch ($encoding) {
-                case "chunked":
-                    $this->parserCallable = [$this, 'parseChunk'];
-                    break;
-                // TODO multipart
-                default:
-                    $this->parserCallable = [$this, 'parseContentLength'];
-                    if ($length = $this->request->getHeader("Content-Length")) {
-                        $this->contentLength = intval($length);
-                    }
+            if ($encoding === 'chunked') {
+                $this->parserCallable = [$this, 'parseChunk'];
+            } else {
+                $this->parserCallable = [$this, 'parseContentLength'];
+                if ($length = $this->request->getHeader("Content-Length")) {
+                    $this->contentLength = (int)$length;
+                }
             }
 
             // Parse rest of body
@@ -86,7 +83,7 @@ class RequestParser
         $this->request->onData($data);
         $this->buffer.= $data;
 
-        if (strlen($this->buffer) >= $this->contentLength) {
+        if (\strlen($this->buffer) >= $this->contentLength) {
             $this->buffer = "";
             $this->notifyCompleted();
         }

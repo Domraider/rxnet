@@ -78,9 +78,9 @@ class Httpd extends Observable
         }
 
         $parser = new RequestParser($request);
-        $conn->on('data', function (...$args) use ($response, $parser) {
+        $conn->on('data', function ($data) use ($response, $parser) {
             try {
-                $parser->parse($args);
+                $parser->parse($data);
             } catch (\Exception $exception) {
                 $response->sendError('Bad Request', 400);
             }
