@@ -69,7 +69,7 @@ class RequestParser
                 default:
                     $this->parserCallable = [$this, 'parseContentLength'];
                     if ($length = $this->request->getHeader("Content-Length")) {
-                        $this->contentLength = intval($length);
+                        $this->contentLength = (int) $length;
                     }
             }
 
