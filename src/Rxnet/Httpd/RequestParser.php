@@ -93,7 +93,7 @@ class RequestParser
     }
   public function parseChunkedBuffer($data)
     {
-        preg_match_all('/^([ABCDEF0123456789]{2,4})\r\n|\r\n([ABCDEF0123456789]{2,4})\r\n/i', $data, $matches);
+        preg_match_all('/^([ABCDEF0123456789]{1,8})\r\n|\r\n([ABCDEF0123456789]{1,8})\r\n/i', $data, $matches);
         if (!$matches[0]) {
             // No chunk limiter, add
             return $data;
